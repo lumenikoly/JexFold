@@ -1,0 +1,149 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without the v prefix (for example 0.0.1)
+        required: true
+        default: 0.0.1
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate release source and version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || { echo "Run releases from main." >&2; exit 1; }
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Version must match X.Y.Z." >&2; exit 1; }
+          test "$(node -p "require('./package.json').version")" = "$VERSION"
+          test "$(node -p "require('./src-tauri/tauri.conf.json').version")" = "$VERSION"
+          grep -Fxq "version = \"$VERSION\"" src-tauri/Cargo.toml
+          grep -Fxq "version = \"$VERSION\"" crates/jxl-core/Cargo.toml
+          test "$(grep -Fxc "## [$VERSION]" CHANGELOG.md)" -eq 1
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists." >&2
+            exit 1
+          fi
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis
+            platform: windows
+          - os: macos-latest
+            bundles: dmg
+            platform: macos
+          - os: ubuntu-22.04
+            bundles: deb,appimage
+            platform: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Linux prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Configure MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify source
+        run: npm run check
+      - name: Test Rust core
+        run: cargo test -p jxl-core --locked
+      - name: Build bundled codecs
+        run: npm run codecs:build
+      - name: Verify real JPEG round trip
+        run: npm run test:integration
+      - name: Build installers
+        run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
+      - name: Collect release assets
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          $extensions = @('.exe', '.dmg', '.deb', '.AppImage')
+          $files = Get-ChildItem target/release/bundle -Recurse -File | Where-Object { $extensions -contains $_.Extension }
+          if (-not $files) { throw 'No installer was produced.' }
+          $arch = $env:RUNNER_ARCH.ToLowerInvariant()
+          foreach ($file in $files) {
+            $name = "JPEG-Archiver_${env:VERSION}_${env:PLATFORM}_${arch}$($file.Extension)"
+            Copy-Item -LiteralPath $file.FullName -Destination (Join-Path release-assets $name)
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: release-assets/*
+          if-no-files-found: error
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create checksums
+        working-directory: release-assets
+        run: sha256sum * > SHA256SUMS
+      - name: Extract release notes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          awk -v header="## [$VERSION]" '
+            $0 == header { found=1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          gh release create "$TAG" release-assets/* \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --fail-on-no-commits

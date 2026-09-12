@@ -1,0 +1,62 @@
+name: Check and build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Linux prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: MSVC developer environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install JS dependencies
+        run: npm ci
+      - name: Frontend checks
+        run: npm run check
+      - name: Core unit tests
+        run: cargo test -p jxl-core --locked
+      - name: Lint core
+        run: cargo clippy -p jxl-core --all-targets --locked -- -D warnings
+      - name: Build official codecs
+        run: npm run codecs:build
+      - name: Real JPEG reconstruction tests
+        run: npm run test:integration
+      - name: Build desktop executable
+        run: npm run tauri -- build --no-bundle
+      - name: Upload Linux/macOS executable and codecs
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jpeg-archiver-${{ runner.os }}-development
+          path: |
+            target/release/jpeg-archiver
+            src-tauri/resources/codecs/
+      - name: Upload Windows executable and codecs
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jpeg-archiver-${{ runner.os }}-development
+          path: |
+            target/release/jpeg-archiver.exe
+            src-tauri/resources/codecs/

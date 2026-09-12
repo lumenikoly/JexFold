@@ -1,0 +1,14 @@
+[workspace]
+members = ["crates/jxl-core", "src-tauri"]
+default-members = ["crates/jxl-core"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.88"
+license = "MIT"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

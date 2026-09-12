@@ -1,0 +1,62 @@
+
+> jpeg-archiver@0.0.1 test
+> node --test tests/format.test.mjs tests/project.test.mjs
+
+TAP version 13
+# Subtest: formats binary sizes without confusing TB and TiB
+ok 1 - formats binary sizes without confusing TB and TiB
+  ---
+  duration_ms: 23.827064
+  type: 'test'
+  ...
+# Subtest: savings handles empty input and expansion
+ok 2 - savings handles empty input and expansion
+  ---
+  duration_ms: 0.161107
+  type: 'test'
+  ...
+# Subtest: paths are displayed on all three desktop platforms
+ok 3 - paths are displayed on all three desktop platforms
+  ---
+  duration_ms: 0.212066
+  type: 'test'
+  ...
+# Subtest: duration does not show negative time
+ok 4 - duration does not show negative time
+  ---
+  duration_ms: 1.203508
+  type: 'test'
+  ...
+# Subtest: desktop config has a local CSP and bundled tools
+ok 5 - desktop config has a local CSP and bundled tools
+  ---
+  duration_ms: 1.689623
+  type: 'test'
+  ...
+# Subtest: no generic shell or file-write permissions are exposed to the webview
+ok 6 - no generic shell or file-write permissions are exposed to the webview
+  ---
+  duration_ms: 1.530541
+  type: 'test'
+  ...
+# Subtest: codec invocation requires JPEG reconstruction and never adds a lossy quality flag
+ok 7 - codec invocation requires JPEG reconstruction and never adds a lossy quality flag
+  ---
+  duration_ms: 1.631465
+  type: 'test'
+  ...
+# Subtest: publication has no rename-overwrite or copy fallback
+ok 8 - publication has no rename-overwrite or copy fallback
+  ---
+  duration_ms: 0.345592
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 102.409036

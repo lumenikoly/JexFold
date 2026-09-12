@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { ConversionMode, Metrics, Options, Progress, RowState, ScanResult, Summary, ToolInfo } from '../types';
@@ -7,6 +8,7 @@ const emptyMetrics = (): Metrics => ({ processed: 0, converted: 0, failed: 0, sk
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 export function useConverter() {
+  const intl = useIntl();
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [tools, setTools] = useState<ToolInfo | null>(null);
   const [busy, setBusy] = useState<'scan' | 'convert' | 'probe' | null>(null);
@@ -43,10 +45,10 @@ export function useConverter() {
     let disposed = false;
     let cleanup: (() => void) | undefined;
     void listen('operation-active', () => {
-      setError('Сначала остановите текущую операцию. Окно можно закрыть после завершения очистки временных файлов.');
+      setError(intl.formatMessage({ id: 'error.operationActive' }));
     }).then(fn => { if (disposed) fn(); else cleanup = fn; }).catch(e => setError(errorText(e)));
     return () => { disposed = true; cleanup?.(); };
-  }, [desktop]);
+  }, [desktop, intl]);
 
   const enter = useCallback((operation: 'scan' | 'convert' | 'probe') => {
     if (busyRef.current || !desktop) return false;

@@ -26,3 +26,8 @@ test('publication has no rename-overwrite or copy fallback', () => {
   assert.match(source, /fs::hard_link/);
   assert.doesNotMatch(source, /fs::rename|fs::copy|remove_file/);
 });
+test('English and Russian locale catalogs have identical message IDs', () => {
+  const en = JSON.parse(read('src/i18n/locales/en.json'));
+  const ru = JSON.parse(read('src/i18n/locales/ru.json'));
+  assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort());
+});

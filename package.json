@@ -24,7 +24,8 @@
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-intl": "^10.2.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.0",

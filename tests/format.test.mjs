@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { formatBytes, savingPercent, basename, duration } from '../src/lib/format.mjs';
 
 test('formats binary sizes without confusing TB and TiB', () => {
-  assert.equal(formatBytes(0), '0 Б');
-  assert.equal(formatBytes(1024), '1 КиБ');
-  assert.equal(formatBytes(1024 ** 4), '1 ТиБ');
+  assert.equal(formatBytes(0, 'ru'), '0 Б');
+  assert.equal(formatBytes(1024, 'ru'), '1 КиБ');
+  assert.equal(formatBytes(1024 ** 4, 'ru'), '1 ТиБ');
+  assert.equal(formatBytes(1024, 'en'), '1 KiB');
   assert.equal(formatBytes(-1), '—');
   assert.equal(formatBytes(NaN), '—');
   assert.equal(formatBytes(Infinity), '—');
@@ -22,6 +23,7 @@ test('paths are displayed on all three desktop platforms', () => {
   assert.equal(basename('/some/folder/'), 'folder');
 });
 test('duration does not show negative time', () => {
-  assert.equal(duration(-10), '0 с');
-  assert.equal(duration(61_000), '1 мин 1 с');
+  assert.equal(duration(-10, 'ru'), '0 с');
+  assert.equal(duration(61_000, 'ru'), '1 мин 1 с');
+  assert.equal(duration(61_000, 'en'), '1 min 1 s');
 });

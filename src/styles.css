@@ -59,6 +59,7 @@ td:first-child { padding-left:22px; }
 .pagination { display:flex; justify-content:center; align-items:center; gap:17px; padding:11px; color:#8490a1; font-size:11px; }
 .settings { padding:21px 20px 16px; }
 .field-label { display:block; font-size:12px; font-weight:600; color:#4c5769; margin:0 0 8px; }
+.field-label-spaced { margin-top:20px; }
 .output-picker { width:100%; display:flex; align-items:center; gap:8px; border:1px solid #dce2eb; background:#fff; border-radius:7px; padding:11px 10px; color:#5a667c; font-size:12px; text-align:left; }
 .output-picker > svg { flex-shrink:0; }
 .output-picker > span:not(.ellipsis) { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }

@@ -3,11 +3,13 @@ import { useIntl } from 'react-intl';
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { ConversionMode, Metrics, Options, Progress, RowState, ScanResult, Summary, ToolInfo } from '../types';
+import { desktopCapabilities } from '../platform/backend';
+import { useWebConverter } from '../platform/web/useWebConverter';
 
 const emptyMetrics = (): Metrics => ({ processed: 0, converted: 0, failed: 0, skipped: 0, inputBytes: 0, outputBytes: 0 });
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
-export function useConverter() {
+function useTauriConverter() {
   const intl = useIntl();
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [tools, setTools] = useState<ToolInfo | null>(null);
@@ -141,6 +143,13 @@ export function useConverter() {
     setScan(null); setSummary(null); rows.current.clear(); liveMetrics.current = emptyMetrics(); setError(''); flush();
   }, [flush]);
 
-  return { desktop, scan, tools, busy, paused, cancelling, error, setError, summary, metrics, rows: rows.current,
-    revision, scanPaths, probe, start, cancel, togglePause, clear };
+  return { desktop, capabilities: desktopCapabilities, scan, tools, busy, paused, cancelling, error, setError, summary, metrics, rows: rows.current,
+    revision, scanPaths, probe, start, cancel, togglePause, clear, scanWebFiles: undefined, selectDirectory: undefined,
+    selectOutputDirectory: undefined, outputLabel: '', downloadReady: 0, downloadAll: undefined };
+}
+
+export function useConverter() {
+  const desktop = useTauriConverter();
+  const web = useWebConverter();
+  return desktop.desktop ? desktop : web;
 }

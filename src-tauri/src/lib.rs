@@ -22,7 +22,7 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("Не удалось запустить JPEG Archiver");
+        .expect("Не удалось запустить JexFold");
     app.run(|app, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             if app.state::<AppState>().session.is_busy() {

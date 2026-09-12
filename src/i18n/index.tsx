@@ -7,7 +7,8 @@ export const supportedLocales = ['en', 'ru'] as const;
 export type Locale = typeof supportedLocales[number];
 export type LanguagePreference = 'system' | Locale;
 
-const STORAGE_KEY = 'jpeg-archiver.language.v1';
+const STORAGE_KEY = 'jexfold.language.v1';
+const LEGACY_STORAGE_KEY = 'jpeg-archiver.language.v1';
 const messages: Record<Locale, Record<string, string>> = { en, ru };
 
 function systemLocale(): Locale {
@@ -21,7 +22,7 @@ function systemLocale(): Locale {
 
 function loadPreference(): LanguagePreference {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     return saved === 'system' || supportedLocales.includes(saved as Locale) ? saved as LanguagePreference : 'system';
   } catch { return 'system'; }
 }

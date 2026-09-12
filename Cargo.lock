@@ -1561,6 +1561,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "jexfold"
+version = "0.0.1"
+dependencies = [
+ "jxl-core",
+ "serde",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+]
+
+[[package]]
 name = "jiff"
 version = "0.2.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1658,17 +1669,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jpeg-archiver"
-version = "0.0.1"
-dependencies = [
- "jxl-core",
- "serde",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
-]
-
-[[package]]
 name = "js-sys"
 version = "0.3.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1707,7 +1707,6 @@ version = "0.0.1"
 dependencies = [
  "filetime",
  "serde",
- "serde_json",
  "sha2",
  "tempfile",
  "thiserror 2.0.20",

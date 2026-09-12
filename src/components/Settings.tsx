@@ -3,8 +3,9 @@ import type { Options, Performance } from '../types';
 import { useLanguage, type LanguagePreference } from '../i18n';
 import { Icon } from './Icon';
 
-export function Settings({ options, setOptions, disabled, chooseOutput }: {
+export function Settings({ options, setOptions, disabled, chooseOutput, desktop, directOutput, outputLabel }: {
   options: Options; setOptions: (options: Options) => void; disabled: boolean; chooseOutput: () => void;
+  desktop: boolean; directOutput: boolean; outputLabel: string;
 }) {
   const intl = useIntl();
   const { preference, setPreference } = useLanguage();
@@ -22,8 +23,8 @@ export function Settings({ options, setOptions, disabled, chooseOutput }: {
         <option value="jpegToJxl">JPEG → JXL</option><option value="jxlToJpeg">JXL → JPEG</option>
       </select>
       <label className="field-label">{t('settings.outputFolder', { format: outputFormat })}</label>
-      <button className="output-picker" onClick={chooseOutput} title={options.outputDir || t('settings.chooseSeparateFolder')}>
-        <Icon name="folder" /><span>{options.outputDir || t('settings.chooseFolder')}</span><span className="ellipsis">···</span>
+      <button className="output-picker" onClick={chooseOutput} disabled={!desktop && !directOutput} title={desktop ? options.outputDir || t('settings.chooseSeparateFolder') : outputLabel || t(directOutput ? 'settings.chooseSeparateFolder' : 'settings.browserDownloads')}>
+        <Icon name="folder" /><span>{desktop ? options.outputDir || t('settings.chooseFolder') : outputLabel || t(directOutput ? 'settings.chooseFolder' : 'settings.browserDownloads')}</span>{(desktop || directOutput) && <span className="ellipsis">···</span>}
       </button>
       <p className="hint">{t('settings.originalsStay')}</p>
       {options.mode === 'jpegToJxl' && <><div className="field-head"><label htmlFor="effort">{t('settings.compressionEffort')}</label><output htmlFor="effort">{options.effort}</output></div>
@@ -35,7 +36,7 @@ export function Settings({ options, setOptions, disabled, chooseOutput }: {
         <option value="quiet">{t('performance.quiet')}</option><option value="balanced">{t('performance.balanced')}</option><option value="fast">{t('performance.fast')}</option>
       </select>
       <div className="options-list">
-        <label className="checkbox-row"><input type="checkbox" checked={options.preserveMtime} onChange={e => setOptions({ ...options, preserveMtime: e.target.checked })} /><span>{t('settings.preserveMtime')}</span></label>
+        {desktop && <label className="checkbox-row"><input type="checkbox" checked={options.preserveMtime} onChange={e => setOptions({ ...options, preserveMtime: e.target.checked })} /><span>{t('settings.preserveMtime')}</span></label>}
         {options.mode === 'jpegToJxl' && <label className="checkbox-row"><input type="checkbox" checked={options.skipLarger} onChange={e => setOptions({ ...options, skipLarger: e.target.checked })} /><span>{t('settings.skipLarger')}</span></label>}
       </div>
     </fieldset>

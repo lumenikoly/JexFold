@@ -1,12 +1,12 @@
 [package]
-name = "jpeg-archiver"
+name = "jexfold"
 version = "0.0.1"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
 [lib]
-name = "jpeg_archiver_lib"
+name = "jexfold_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

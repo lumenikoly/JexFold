@@ -103,7 +103,7 @@ jobs:
           if (-not $files) { throw 'No installer was produced.' }
           $arch = $env:RUNNER_ARCH.ToLowerInvariant()
           foreach ($file in $files) {
-            $name = "JPEG-Archiver_${env:VERSION}_${env:PLATFORM}_${arch}$($file.Extension)"
+            $name = "JexFold_${env:VERSION}_${env:PLATFORM}_${arch}$($file.Extension)"
             Copy-Item -LiteralPath $file.FullName -Destination (Join-Path release-assets $name)
           }
       - uses: actions/upload-artifact@v4

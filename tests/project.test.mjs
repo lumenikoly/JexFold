@@ -31,3 +31,16 @@ test('English and Russian locale catalogs have identical message IDs', () => {
   const ru = JSON.parse(read('src/i18n/locales/ru.json'));
   assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort());
 });
+test('web build is static, scoped for Pages, and uses a verified worker pipeline', () => {
+  const vite = read('vite.config.ts');
+  const worker = read('src/platform/web/jxl-worker.ts');
+  const workflow = read('.github/workflows/pages.yml');
+  const wrapper = read('wasm/src/jexfold_codec.cc');
+  assert.match(vite, /VITE_BASE_PATH/);
+  assert.match(worker, /equalBytes\(input, reconstructed\)/);
+  assert.match(worker, /postMessage\([^\n]+transfer/);
+  assert.match(wrapper, /JxlEncoderAddJPEGFrame/);
+  assert.match(wrapper, /JxlDecoderSetJPEGBuffer/);
+  assert.match(workflow, /actions\/deploy-pages@v4/);
+  assert.match(workflow, /npm run wasm:build/);
+});

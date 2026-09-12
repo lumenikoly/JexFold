@@ -48,15 +48,15 @@ jobs:
         if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: jpeg-archiver-${{ runner.os }}-development
+          name: jexfold-${{ runner.os }}-development
           path: |
-            target/release/jpeg-archiver
+            target/release/jexfold
             src-tauri/resources/codecs/
       - name: Upload Windows executable and codecs
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: jpeg-archiver-${{ runner.os }}-development
+          name: jexfold-${{ runner.os }}-development
           path: |
-            target/release/jpeg-archiver.exe
+            target/release/jexfold.exe
             src-tauri/resources/codecs/

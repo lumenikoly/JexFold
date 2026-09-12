@@ -1,11 +1,12 @@
 import type { Options } from '../types';
 
-const KEY = 'jpeg-archiver.preferences.v1';
+const KEY = 'jexfold.preferences.v1';
+const LEGACY_KEY = 'jpeg-archiver.preferences.v1';
 export const defaults: Options = { mode: 'jpegToJxl', outputDir: '', effort: 7, performance: 'balanced', preserveMtime: true, skipLarger: true };
 
 export function loadPreferences(): Options {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(KEY) || 'null');
+    const value: unknown = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY) || 'null');
     if (typeof value !== 'object' || value === null) return { ...defaults };
     const raw = value as Record<string, unknown>;
     return {

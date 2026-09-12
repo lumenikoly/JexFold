@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "JPEG Archiver",
+  "productName": "JexFold",
   "version": "0.0.1",
-  "identifier": "app.jpegarchiver.desktop",
+  "identifier": "app.jexfold.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "JPEG Archiver",
+        "title": "JexFold",
         "width": 1180,
         "height": 830,
         "minWidth": 820,

@@ -1,8 +1,8 @@
-# JPEG Archiver
+# JexFold
 
 **English** · [Русский](README.ru.md)
 
-JPEG Archiver is a desktop application for reversible JPEG-to-JPEG XL recompression. It is developed in the JexFold repository; the current version is **0.0.1**.
+JexFold is a local application for reversible JPEG-to-JPEG XL recompression. It runs as a desktop app and as a static browser app; the current version is **0.0.1**.
 
 The application uses the official `cjxl` and `djxl` tools, processes everything locally, and verifies every compression by reconstructing the original JPEG and comparing it byte for byte. Originals are never deleted, and existing output files are never overwritten.
 
@@ -20,6 +20,19 @@ The application uses the official `cjxl` and `djxl` tools, processes everything 
 The application does not change JPEG quality, dimensions, or embedded metadata.
 
 ## Installation
+
+### Web
+
+The static web app is published by the dedicated **Web / GitHub Pages** workflow.
+It performs conversion in Web Workers with `libjxl.wasm`; photos are not uploaded.
+Chrome and Edge can write a preserved folder tree to a chosen destination.
+Other browsers offer converted files as downloads. After the first complete load,
+the installed service worker keeps the app available offline.
+
+Repository maintainers must select **GitHub Actions** as the Pages source once in
+the repository settings.
+
+### Desktop
 
 Ready-to-use packages are published on the repository's Releases page:
 
@@ -87,6 +100,8 @@ Windows builds use MSVC, Visual Studio Build Tools, and the Windows SDK. macOS b
 
 ```bash
 npm run check
+npm run wasm:build
+npm run web:build
 cargo test -p jxl-core --locked
 cargo clippy -p jxl-core --all-targets --locked -- -D warnings
 npm run codecs:build

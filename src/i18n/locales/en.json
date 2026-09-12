@@ -1,6 +1,7 @@
 {
   "app.tagline": "Compresses photos without losing quality",
   "app.previewNotice": "File operations are unavailable in preview mode.",
+  "app.webLocal": "Web · local processing",
   "error.actionFailed": "The action could not be completed",
   "error.operationActive": "Stop the current operation first. You can close the window after temporary files have been cleaned up.",
   "common.details": "Details",
@@ -45,6 +46,7 @@
   "settings.outputFolder": "Folder for {format} files",
   "settings.chooseSeparateFolder": "Choose a separate folder",
   "settings.chooseFolder": "Choose folder",
+  "settings.browserDownloads": "Browser downloads",
   "settings.originalsStay": "Originals remain in place",
   "settings.compressionEffort": "Compression effort",
   "settings.faster": "Faster",
@@ -82,6 +84,7 @@
   "action.stop": "Stop",
   "action.startCompression": "Start compression",
   "action.restoreJpeg": "Restore JPEG",
+  "action.download": "Download ({count})",
   "summary.finishedIn": "Finished in {duration}",
   "summary.notProcessed": "Not processed: {count}",
   "footer.codecMissing": "Compression component not found",

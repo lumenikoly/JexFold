@@ -1,6 +1,7 @@
 {
   "app.tagline": "Сжимает фотографии без потери качества",
   "app.previewNotice": "В предпросмотре работа с файлами недоступна.",
+  "app.webLocal": "Web · локальная обработка",
   "error.actionFailed": "Не удалось выполнить действие",
   "error.operationActive": "Сначала остановите текущую операцию. Окно можно закрыть после завершения очистки временных файлов.",
   "common.details": "Подробнее",
@@ -45,6 +46,7 @@
   "settings.outputFolder": "Папка для {format}",
   "settings.chooseSeparateFolder": "Выбрать отдельную папку",
   "settings.chooseFolder": "Выбрать папку",
+  "settings.browserDownloads": "Загрузки браузера",
   "settings.originalsStay": "Оригиналы останутся на месте",
   "settings.compressionEffort": "Степень сжатия",
   "settings.faster": "Быстрее",
@@ -82,6 +84,7 @@
   "action.stop": "Остановить",
   "action.startCompression": "Начать сжатие",
   "action.restoreJpeg": "Восстановить JPEG",
+  "action.download": "Скачать ({count})",
   "summary.finishedIn": "Готово за {duration}",
   "summary.notProcessed": "Не обработано: {count}",
   "footer.codecMissing": "Компонент сжатия не найден",

@@ -1,6 +1,6 @@
 :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #243042; background: #f6f7f9; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; font-size: 14px; }
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 780px; }
+body { margin: 0; min-width: 320px; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled, fieldset:disabled button { opacity: .46; cursor: not-allowed; }
@@ -10,6 +10,7 @@ h1,h2,h3,p { margin: 0; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .app-shell { max-width: 1500px; margin: 0 auto; padding: 27px 32px 18px; }
 .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.web-badge { position:absolute; top:34px; right:32px; color:#657084; font-size:12px; border:1px solid #dfe4ea; border-radius:999px; padding:6px 10px; background:#fff; }
 .brand { display:flex; align-items:center; gap: 14px; }
 .brand-mark { background: #244c42; color:#fff; width:49px; height:49px; display:flex; align-items:center; justify-content:center; gap:1px; font-size:19px; font-weight:750; border-radius:13px; letter-spacing:-1px; }
 .brand-mark span { color: #a3d9b8; font-weight:400; }
@@ -112,4 +113,25 @@ progress::-moz-progress-bar { background:#4771bf; }
 .scan-warnings { border-top:1px solid #eee; color:#9e784e; font-size:11px; padding:12px 0; }
 .scan-warnings pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:130px; overflow:auto; font-size:10px; }
 @media (max-width:1000px) { .app-shell { padding:22px 20px 16px; } .workspace { gap:14px; grid-template-columns:minmax(0,1fr) 275px; } .source-panel { padding:18px 16px 0; } .table-scroll { margin:0 -16px; } th:first-child,td:first-child { padding-left:16px; } .settings { padding:18px 16px; } .progress-bottom { gap:18px; } .stat strong { font-size:16px; } .button.primary { padding:12px; } .dropzone p { max-width:290px; margin-left:auto; margin-right:auto; } }
+@media (max-width:760px) {
+  .app-shell { padding:18px 14px 14px; }
+  .app-header { margin-bottom:18px; padding-right:112px; }
+  .web-badge { top:24px; right:14px; }
+  .brand-mark { width:43px; height:43px; border-radius:11px; }
+  h1 { font-size:19px; }
+  .brand p { display:none; }
+  .workspace { grid-template-columns:1fr; }
+  .settings { order:2; }
+  .source-buttons { flex-wrap:wrap; }
+  .dropzone { padding:20px 10px; }
+  .progress-panel { padding:16px; }
+  .progress-bottom { display:grid; grid-template-columns:repeat(3,1fr); gap:16px 10px; }
+  .savings { grid-column:1 / -1; }
+  .actions { grid-column:1 / -1; margin-left:0; }
+  .actions .button { flex:1; }
+  th:first-child { width:52%; } th:nth-child(2) { width:20%; } th:nth-child(3) { display:none; } th:last-child { width:28%; }
+  td:nth-child(3) { display:none; }
+  .app-footer { flex-wrap:wrap; }
+  .footer-local { margin-left:0; width:100%; text-align:center; }
+}
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }

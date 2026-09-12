@@ -11,6 +11,7 @@ export interface ScanResult {
   warnings: string[];
   warningCount: number;
   totalBytes: number;
+  mode: ConversionMode;
 }
 export interface ToolInfo {
   directory: string;
@@ -18,7 +19,9 @@ export interface ToolInfo {
   decoderVersion: string;
 }
 export type Performance = 'quiet' | 'balanced' | 'fast';
+export type ConversionMode = 'jpegToJxl' | 'jxlToJpeg';
 export interface Options {
+  mode: ConversionMode;
   outputDir: string;
   effort: number;
   performance: Performance;
@@ -26,7 +29,7 @@ export interface Options {
   skipLarger: boolean;
 }
 export type ItemStatus = 'converted' | 'existing' | 'notSmaller' | 'failed' | 'cancelled';
-export type Stage = 'encoding' | 'verifying';
+export type Stage = 'encoding' | 'decoding' | 'verifying';
 export interface ItemResult {
   id: number;
   source: string;
@@ -51,7 +54,6 @@ export interface Summary {
   inputBytes: number;
   outputBytes: number;
   elapsedMs: number;
-  reportPath: string;
   wasCancelled: boolean;
 }
 export interface RowState { status: Stage | ItemStatus; result?: ItemResult }

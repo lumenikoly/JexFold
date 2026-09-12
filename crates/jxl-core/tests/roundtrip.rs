@@ -1,6 +1,6 @@
 //! Real codec integration tests. Explicitly opt in, never silently "pass"
 //! without libjxl: npm run codecs:build && npm run test:integration.
-use jxl_core::{run_batch, scan_sources, Control, Options, Performance, Toolchain};
+use jxl_core::{run_batch, scan_sources, Control, ConversionMode, Options, Performance, Toolchain};
 use std::{fs, path::PathBuf};
 
 fn toolchain() -> Toolchain {
@@ -9,7 +9,7 @@ fn toolchain() -> Toolchain {
     Toolchain::from_directory(&PathBuf::from(dir)).unwrap()
 }
 fn options(output: PathBuf) -> Options {
-    Options { output_dir: output, effort: 7, performance: Performance::Quiet, preserve_mtime: true, skip_larger: false }
+    Options { mode: ConversionMode::JpegToJxl, output_dir: output, effort: 7, performance: Performance::Quiet, preserve_mtime: true, skip_larger: false }
 }
 
 #[test]
@@ -24,16 +24,14 @@ fn reconstructs_baseline_and_progressive_jpeg_with_metadata() {
     fs::write(input.join("Фото с пробелами.JPG"), baseline).unwrap();
     fs::write(input.join("progressive.jpeg"), progressive).unwrap();
     let control = Control::default();
-    let scan = scan_sources(std::slice::from_ref(&input), &control).unwrap();
+    let scan = scan_sources(std::slice::from_ref(&input), ConversionMode::JpegToJxl, &control).unwrap();
     let summary = run_batch(&scan, &options(output.clone()), &toolchain(), &control, |_| {}).unwrap();
     assert_eq!(summary.converted, 2, "{summary:?}");
     assert_eq!(summary.failed, 0);
     assert_eq!(fs::read(input.join("Фото с пробелами.JPG")).unwrap(), baseline);
     assert_eq!(fs::read(input.join("progressive.jpeg")).unwrap(), progressive);
     assert!(output.join("photos/Фото с пробелами.JPG.jxl").is_file());
-    let records = fs::read_to_string(&summary.report_path).unwrap();
-    assert!(records.contains("sha256"));
-    assert!(records.contains("summary"));
+    assert!(!fs::read_dir(&output).unwrap().any(|f| f.unwrap().file_name().to_string_lossy().starts_with("jxl-report-")));
     // A second run must skip, not overwrite or invent successful validation.
     let again = run_batch(&scan, &options(output.clone()), &toolchain(), &control, |_| {}).unwrap();
     assert_eq!(again.existing, 2);
@@ -51,7 +49,7 @@ fn corrupt_jpeg_does_not_publish_or_change_original() {
     let bytes = [0xff, 0xd8, 0xff, 0x00, 0x01];
     fs::write(input.join("broken.jpg"), bytes).unwrap();
     let c = Control::default();
-    let scan = scan_sources(std::slice::from_ref(&input), &c).unwrap();
+    let scan = scan_sources(std::slice::from_ref(&input), ConversionMode::JpegToJxl, &c).unwrap();
     let result = run_batch(&scan, &options(output.clone()), &toolchain(), &c, |_| {}).unwrap();
     assert_eq!(result.failed, 1);
     assert_eq!(fs::read(input.join("broken.jpg")).unwrap(), bytes);
@@ -69,7 +67,7 @@ fn rejects_nested_output_before_executing_codec() {
     let ext = if cfg!(windows) { ".exe" } else { "" };
     fs::write(bin.join(format!("cjxl{ext}")), b"not executable").unwrap();
     fs::write(bin.join(format!("djxl{ext}")), b"not executable").unwrap();
-    let c = Control::default(); let scan = scan_sources(&[input], &c).unwrap();
+    let c = Control::default(); let scan = scan_sources(&[input], ConversionMode::JpegToJxl, &c).unwrap();
     let tools = Toolchain::from_directory(&bin).unwrap();
     let error = run_batch(&scan, &options(output), &tools, &c, |_| {}).unwrap_err();
     assert!(error.to_string().contains("вложены"));

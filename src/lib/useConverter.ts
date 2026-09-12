@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { Metrics, Options, Progress, RowState, ScanResult, Summary, ToolInfo } from '../types';
+import type { ConversionMode, Metrics, Options, Progress, RowState, ScanResult, Summary, ToolInfo } from '../types';
 
 const emptyMetrics = (): Metrics => ({ processed: 0, converted: 0, failed: 0, skipped: 0, inputBytes: 0, outputBytes: 0 });
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
@@ -65,11 +65,11 @@ export function useConverter() {
 
   // No automatic probe in a StrictMode effect: App performs it once through
   // a ref-guarded effect; the async operation can outlive the effect cleanup.
-  const scanPaths = useCallback(async (paths: string[]) => {
+  const scanPaths = useCallback(async (paths: string[], mode: ConversionMode) => {
     if (!paths.length || !enter('scan')) return;
     generation.current += 1;
     setScan(null); setSummary(null); rows.current.clear(); liveMetrics.current = emptyMetrics(); flush();
-    try { const result = await invoke<ScanResult>('scan_sources', { paths }); if (alive.current) setScan(result); }
+    try { const result = await invoke<ScanResult>('scan_sources', { paths, mode }); if (alive.current) setScan(result); }
     catch (e) { if (alive.current) setError(errorText(e)); }
     finally { leave(); }
   }, [enter, leave, flush]);

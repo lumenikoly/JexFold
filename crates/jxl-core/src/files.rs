@@ -1,15 +1,21 @@
 use sha2::{Digest, Sha256};
 use std::{fs::{self, File}, io::{Read, Write}, path::{Component, Path, PathBuf}};
-use crate::{Control, Error, Result, SourceFile};
+use crate::{Control, ConversionMode, Error, Result, SourceFile};
 
-pub(crate) fn output_relative(relative: &Path) -> Result<PathBuf> {
+pub(crate) fn output_relative(relative: &Path, mode: ConversionMode) -> Result<PathBuf> {
     if relative.as_os_str().is_empty() || relative.components().any(|c| !matches!(c, Component::Normal(_))) {
         return Err(Error::Invalid("Небезопасный относительный путь".into()));
     }
     // Keep the JPEG extension: a.jpg and a.jpeg must never map to one target.
-    let mut result = relative.as_os_str().to_os_string();
-    result.push(".jxl");
-    Ok(PathBuf::from(result))
+    match mode {
+        ConversionMode::JpegToJxl => { let mut result = relative.as_os_str().to_os_string(); result.push(".jxl"); Ok(PathBuf::from(result)) }
+        ConversionMode::JxlToJpeg => {
+            let mut result = relative.to_path_buf();
+            result.set_extension("");
+            if !result.extension().and_then(|s| s.to_str()).is_some_and(|s| s.eq_ignore_ascii_case("jpg") || s.eq_ignore_ascii_case("jpeg")) { result.set_extension("jpg"); }
+            Ok(result)
+        }
+    }
 }
 
 /// Create parents one at a time, refusing symlinks and non-directories.
@@ -104,13 +110,15 @@ mod tests {
     use super::*;
     #[test]
     fn keeps_extensions_to_avoid_collisions() {
-        assert_eq!(output_relative(Path::new("folder/a.jpg")).unwrap(), PathBuf::from("folder/a.jpg.jxl"));
-        assert_ne!(output_relative(Path::new("a.jpg")).unwrap(), output_relative(Path::new("a.jpeg")).unwrap());
+        assert_eq!(output_relative(Path::new("folder/a.jpg"), ConversionMode::JpegToJxl).unwrap(), PathBuf::from("folder/a.jpg.jxl"));
+        assert_ne!(output_relative(Path::new("a.jpg"), ConversionMode::JpegToJxl).unwrap(), output_relative(Path::new("a.jpeg"), ConversionMode::JpegToJxl).unwrap());
+        assert_eq!(output_relative(Path::new("folder/a.jpg.jxl"), ConversionMode::JxlToJpeg).unwrap(), PathBuf::from("folder/a.jpg"));
+        assert_eq!(output_relative(Path::new("folder/a.jxl"), ConversionMode::JxlToJpeg).unwrap(), PathBuf::from("folder/a.jpg"));
     }
     #[test]
     fn rejects_path_traversal() {
         for path in ["../a.jpg", "/tmp/a.jpg", "a/../../b.jpg", ""] {
-            assert!(output_relative(Path::new(path)).is_err());
+            assert!(output_relative(Path::new(path), ConversionMode::JpegToJxl).is_err());
         }
     }
     #[test]

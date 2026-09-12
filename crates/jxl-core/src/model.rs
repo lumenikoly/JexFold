@@ -21,7 +21,12 @@ pub struct ScanResult {
     pub warnings: Vec<String>,
     pub warning_count: usize,
     pub total_bytes: u64,
+    pub mode: ConversionMode,
 }
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ConversionMode { #[default] JpegToJxl, JxlToJpeg }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,6 +58,7 @@ impl Performance {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Options {
+    pub mode: ConversionMode,
     pub output_dir: PathBuf,
     pub effort: u8,
     pub performance: Performance,
@@ -62,7 +68,7 @@ pub struct Options {
 
 #[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum Stage { Encoding, Verifying }
+pub enum Stage { Encoding, Decoding, Verifying }
 
 #[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -102,7 +108,6 @@ pub struct Summary {
     pub input_bytes: u64,
     pub output_bytes: u64,
     pub elapsed_ms: u64,
-    pub report_path: PathBuf,
     pub was_cancelled: bool,
 }
 

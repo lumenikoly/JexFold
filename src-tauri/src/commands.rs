@@ -1,17 +1,17 @@
 use std::path::PathBuf;
 use tauri::{ipc::Channel, path::BaseDirectory, AppHandle, Manager, State};
-use jxl_core::{Options, Progress, ScanResult, Summary, ToolInfo, Toolchain};
+use jxl_core::{ConversionMode, Options, Progress, ScanResult, Summary, ToolInfo, Toolchain};
 use crate::session::AppState;
 
 #[tauri::command]
-pub async fn scan_sources(paths: Vec<PathBuf>, state: State<'_, AppState>) -> Result<ScanResult, String> {
+pub async fn scan_sources(paths: Vec<PathBuf>, mode: ConversionMode, state: State<'_, AppState>) -> Result<ScanResult, String> {
     let session = state.session.clone();
     let operation = session.begin()?;
     tauri::async_runtime::spawn_blocking(move || {
         let _operation = operation;
         // A failed rescan must never leave an older hidden plan available.
         *session.scan.lock().map_err(|_| "Сбой состояния очереди")? = None;
-        let result = jxl_core::scan_sources(&paths, &_operation.control).map_err(|e| e.to_string())?;
+        let result = jxl_core::scan_sources(&paths, mode, &_operation.control).map_err(|e| e.to_string())?;
         *session.scan.lock().map_err(|_| "Сбой состояния очереди")? = Some(result.clone());
         Ok(result)
     }).await.map_err(|e| e.to_string())?

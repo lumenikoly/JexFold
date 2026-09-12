@@ -20,6 +20,4 @@ pub enum Error {
     SourceChanged,
     #[error("Восстановленный JPEG не совпадает с оригиналом")]
     Verification,
-    #[error("Не удалось записать отчёт: {0}")]
-    Report(String),
 }

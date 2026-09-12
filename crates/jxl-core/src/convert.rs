@@ -1,5 +1,5 @@
 use std::{fs, path::Path, time::{Duration, Instant}};
-use crate::{files, process, Control, Error, ItemResult, ItemStatus, Options, Progress, Result, SourceFile, Stage, Toolchain};
+use crate::{files, process, ConversionMode, Control, Error, ItemResult, ItemStatus, Options, Progress, Result, SourceFile, Stage, Toolchain};
 
 const CODEC_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
@@ -15,7 +15,7 @@ pub(crate) fn convert_one(
     threads: usize, control: &Control, notify: &impl Fn(Progress),
 ) -> ItemResult {
     let start = Instant::now();
-    let relative = match files::output_relative(&source.relative) {
+    let relative = match files::output_relative(&source.relative, options.mode) {
         Ok(relative) => relative,
         Err(error) => return failed_result(source, root, error, start),
     };
@@ -30,11 +30,30 @@ pub(crate) fn convert_one(
         }
         files::ensure_stamp(source)?;
         let temp = tempfile::Builder::new().prefix(".jxl-archiver-").tempdir_in(&parent)?;
-        let snapshot = temp.path().join("input.jpg");
-        let stage = temp.path().join("encoded.jxl");
-        let reconstructed = temp.path().join("restored.jpg");
+        let snapshot = temp.path().join(if options.mode == ConversionMode::JpegToJxl { "input.jpg" } else { "input.jxl" });
+        let stage = temp.path().join(if options.mode == ConversionMode::JpegToJxl { "encoded.jxl" } else { "restored.jpg" });
+        let reconstructed = temp.path().join("verified.jpg");
         let hash = files::snapshot(&source.source, &snapshot, control)?;
         files::ensure_stamp(source)?;
+        if options.mode == ConversionMode::JxlToJpeg {
+            notify(Progress::Stage { id: source.id, stage: Stage::Decoding });
+            process::run(&tools.decoder, &[
+                snapshot.as_os_str().into(), stage.as_os_str().into(),
+                "--reconstruct_jpeg".into(), format!("--num_threads={threads}").into(),
+            ], control, CODEC_TIMEOUT)?;
+            let size = fs::metadata(&stage)?.len();
+            if size < 3 { return Err(Error::Invalid("Декодер создал пустой или повреждённый JPEG".into())); }
+            use std::io::Read;
+            let mut signature = [0_u8; 3];
+            std::fs::File::open(&stage)?.read_exact(&mut signature)?;
+            if signature != [0xff, 0xd8, 0xff] { return Err(Error::Invalid("Результат не содержит сигнатуру JPEG".into())); }
+            files::ensure_stamp(source)?;
+            if !files::equal_files(&source.source, &snapshot, control)? { return Err(Error::SourceChanged); }
+            if options.preserve_mtime { if let Some(modified) = source.modified { filetime::set_file_mtime(&stage, filetime::FileTime::from_system_time(modified))?; } }
+            control.check()?;
+            let warning = files::publish(&stage, &target)?;
+            return Ok(Outcome { status: ItemStatus::Converted, output_bytes: Some(size), sha256: Some(hash), message: warning });
+        }
         // Cheap signature check is not a substitute for the codec parser, but
         // prevents accidentally feeding a renamed PNG to a JPEG-only tool.
         {
@@ -124,7 +143,7 @@ mod tests {
         }
         let source = SourceFile { id: 0, source: input.clone(), relative: "original.jpg".into(),
             size: meta.len(), modified: meta.modified().ok() };
-        let options = Options { output_dir: root.clone(), effort: 7, performance: crate::Performance::Quiet,
+        let options = Options { mode: ConversionMode::JpegToJxl, output_dir: root.clone(), effort: 7, performance: crate::Performance::Quiet,
             preserve_mtime: true, skip_larger: false };
         let result = convert_one(&source, &root, &options, &Toolchain { encoder, decoder }, 1,
             &Control::default(), &|_| {});

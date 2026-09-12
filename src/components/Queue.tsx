@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
-import type { RowState, ScanResult } from '../types';
+import type { ConversionMode, RowState, ScanResult } from '../types';
 import { formatBytes } from '../lib/format.mjs';
 import { Icon } from './Icon';
 
 const PAGE_SIZE = 75;
 const labels: Record<RowState['status'], string> = {
-  encoding: 'Сжатие', verifying: 'Проверка', converted: 'Проверен', existing: 'Уже существует',
+  encoding: 'Сжатие', decoding: 'Восстановление', verifying: 'Проверка', converted: 'Готов', existing: 'Уже существует',
   notSmaller: 'Нет экономии', failed: 'Ошибка', cancelled: 'Отменён',
 };
-export function Queue({ scan, rows, finished }: { scan: ScanResult | null; rows: Map<number, RowState>; finished: boolean }) {
+export function Queue({ scan, rows, finished, mode }: { scan: ScanResult | null; rows: Map<number, RowState>; finished: boolean; mode: ConversionMode }) {
   const [page, setPage] = useState(0);
   useEffect(() => { setPage(0); }, [scan]);
-  if (!scan) return <div className="queue-empty"><Icon name="file" size={30} /><span>Здесь появится очередь фотографий</span><small>JPEG и JPG · вложенные папки поддерживаются</small></div>;
+  if (!scan) return <div className="queue-empty"><Icon name="file" size={30} /><span>Добавьте {mode === 'jpegToJxl' ? 'JPEG для сжатия' : 'JXL для восстановления'}</span></div>;
   const pageCount = Math.ceil(scan.files.length / PAGE_SIZE);
   const visible = scan.files.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   return <>
     <div className="table-scroll"><table>
-      <thead><tr><th>Файл</th><th>JPEG</th><th>JXL</th><th>Результат</th></tr></thead>
+      <thead><tr><th>Файл</th><th>{mode === 'jpegToJxl' ? 'JPEG' : 'JXL'}</th><th>{mode === 'jpegToJxl' ? 'JXL' : 'JPEG'}</th><th>Результат</th></tr></thead>
       <tbody>{visible.map(file => {
         const state = rows.get(file.id);
         const result = state?.result;

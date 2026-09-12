@@ -1,7 +1,7 @@
 import type { Options } from '../types';
 
 const KEY = 'jpeg-archiver.preferences.v1';
-export const defaults: Options = { outputDir: '', effort: 7, performance: 'balanced', preserveMtime: true, skipLarger: true };
+export const defaults: Options = { mode: 'jpegToJxl', outputDir: '', effort: 7, performance: 'balanced', preserveMtime: true, skipLarger: true };
 
 export function loadPreferences(): Options {
   try {
@@ -9,6 +9,7 @@ export function loadPreferences(): Options {
     if (typeof value !== 'object' || value === null) return { ...defaults };
     const raw = value as Record<string, unknown>;
     return {
+      mode: raw.mode === 'jxlToJpeg' ? 'jxlToJpeg' : 'jpegToJxl',
       outputDir: typeof raw.outputDir === 'string' ? raw.outputDir : '',
       effort: typeof raw.effort === 'number' && Number.isInteger(raw.effort) && raw.effort >= 3 && raw.effort <= 9 ? raw.effort : 7,
       performance: raw.performance === 'quiet' || raw.performance === 'balanced' || raw.performance === 'fast' ? raw.performance : 'balanced',

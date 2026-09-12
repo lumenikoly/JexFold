@@ -1,82 +1,69 @@
 # JPEG Archiver
 
-JPEG Archiver — настольное приложение для обратимой перепаковки JPEG в JPEG XL.
-Проект распространяется в репозитории JexFold; текущая версия — **0.0.1**.
+**English** · [Русский](README.ru.md)
 
-Приложение использует официальные `cjxl` и `djxl`, работает локально и после
-каждого преобразования восстанавливает исходный JPEG и сравнивает его побайтно.
-Оригиналы не удаляются, а существующие результаты не перезаписываются.
+JPEG Archiver is a desktop application for reversible JPEG-to-JPEG XL recompression. It is developed in the JexFold repository; the current version is **0.0.1**.
 
-## Возможности
+The application uses the official `cjxl` and `djxl` tools, processes everything locally, and verifies every compression by reconstructing the original JPEG and comparing it byte for byte. Originals are never deleted, and existing output files are never overwritten.
 
-- выбор файлов и папок, drag-and-drop и рекурсивный поиск `.jpg`/`.jpeg`;
-- сохранение структуры исходных папок в отдельном каталоге назначения;
-- строгая проверка JPEG → JXL → JPEG и SHA-256 исходного файла;
-- пауза, отмена, ограничение параллельной нагрузки и очередь с пагинацией;
-- пропуск результата, если JXL не меньше исходного JPEG;
-- локальная обработка без сетевых запросов во время работы.
+## Features
 
-Приложение не меняет качество, размер или метаданные JPEG, не удаляет оригиналы.
+- JPEG → JXL compression and JXL → JPEG reconstruction;
+- file and folder selection, drag-and-drop, and recursive `.jpg`/`.jpeg` discovery;
+- preservation of the source folder structure in a separate destination directory;
+- strict JPEG → JXL → JPEG verification and source SHA-256 calculation;
+- pause, cancellation, configurable parallel load, and a paginated queue;
+- optional rejection of JXL output that is not smaller than the source JPEG;
+- English and Russian UI, system-language detection, and a saved language preference;
+- local processing with no network requests while converting files.
 
-## Установка
+The application does not change JPEG quality, dimensions, or embedded metadata.
 
-Готовые пакеты находятся на странице Releases:
+## Installation
 
-- Windows 10/11 — установщик NSIS (`.exe`);
-- macOS 11+ — образ (`.dmg`);
-- Debian/Ubuntu — пакет `.deb`; для других Linux-дистрибутивов — `.AppImage`.
+Ready-to-use packages are published on the repository's Releases page:
 
-Версия 0.0.1 не подписана. Windows SmartScreen и macOS Gatekeeper могут показать
-предупреждение о неизвестном издателе. Проверяйте файл по `SHA256SUMS`, который
-прикладывается к каждому релизу.
+- Windows 10/11 — NSIS installer (`.exe`);
+- macOS 11 or later — disk image (`.dmg`);
+- Debian/Ubuntu — `.deb` package; other Linux distributions — `.AppImage`.
 
-## Использование
+Version 0.0.1 is unsigned. Windows SmartScreen and macOS Gatekeeper may warn about an unknown publisher. Verify downloads against the `SHA256SUMS` file attached to each release.
 
-1. Выберите JPEG-файлы или исходную папку.
-2. Выберите отдельную папку назначения. Она не должна быть вложена в исходную.
-3. Настройте усилие сжатия и нагрузку.
-4. Нажмите **«Сжать и проверить»**.
-5. Проверьте итог конвертации в интерфейсе.
+## Usage
 
-Пример размещения результата:
+1. Select JPEG/JXL files or a source folder.
+2. Select a separate destination folder. It must not be nested inside the source folder, and the source must not be nested inside it.
+3. Choose the conversion mode and processing settings.
+4. Click **Start compression** or **Restore JPEG**.
+5. Review the result in the application.
+
+Example output layout:
 
 ```text
-Исходник:   /photos/2026/IMG_001.JPG
-Назначение: /archive
-Результат:  /archive/photos/2026/IMG_001.JPG.jxl
+Source:      /photos/2026/IMG_001.JPG
+Destination: /archive
+Result:      /archive/photos/2026/IMG_001.JPG.jxl
 ```
 
-Двойное расширение сохраняет исходное имя и не смешивает одинаково названные
-`.jpg` и `.jpeg`. Статус `existing` означает только, что файл уже существовал и
-не был перезаписан; его содержимое при повторном запуске не проверяется.
+The double extension preserves the original filename and keeps identically named `.jpg` and `.jpeg` files distinct. An `existing` status only means the destination file was already present and was not overwritten; its contents are not reverified on a later run.
 
-### Восстановление JPEG
+### Language
 
-Встроенный интерфейс пока выполняет только JPEG → JXL. Обратное восстановление
-доступно через поставляемый `djxl`:
+The interface supports English and Russian. The default **System** setting follows the operating-system/browser language and falls back to English when it is unsupported. A manually selected language is saved locally.
 
-```bash
-djxl photo.jpg.jxl restored.jpg --reconstruct_jpeg
-```
+Translations live in `src/i18n/locales/` and use stable semantic message IDs, so more languages can be added without changing the conversion core.
 
-SHA-256 восстановленного файла проверяется приложением до публикации результата.
+## Important limitations
 
-## Важные ограничения
+- The destination filesystem must support hard links, such as NTFS, APFS, or ext4. FAT/exFAT is unsupported; SMB/NFS behavior depends on the implementation.
+- Each active job temporarily needs enough free space for the JPEG, JXL, and reconstructed JPEG.
+- File modification time is preserved, but ACLs, Finder tags, extended attributes, and separate XMP/AAE files are not.
+- Symbolic links are not traversed. A queue may contain at most 250,000 files.
+- Before deleting any originals yourself, verify your backup and restore several representative files.
 
-- Каталог назначения должен поддерживать жёсткие ссылки (например, NTFS, APFS,
-  ext4). FAT/exFAT не поддерживаются; поведение SMB/NFS зависит от реализации.
-- Для каждого активного задания временно требуется место под JPEG, JXL и
-  восстановленный JPEG.
-- Сохраняется время изменения файла, но не ACL, Finder-теги, расширенные атрибуты
-  и отдельные XMP/AAE-файлы.
-- Символические ссылки не обходятся. Максимум очереди — 250 000 файлов.
-- До удаления оригиналов самостоятельно проверьте резервную копию и восстановление
-  нескольких характерных файлов.
+## Running from source
 
-## Запуск из исходников
-
-Требуются Node.js 22.12+, Rust 1.88, Git, CMake и C/C++ toolchain. Установите
-[системные зависимости Tauri 2](https://v2.tauri.app/start/prerequisites/), затем:
+You need Node.js 22.12 or later, Rust 1.88, Git, CMake, and a C/C++ toolchain. Install the [Tauri 2 system prerequisites](https://v2.tauri.app/start/prerequisites/), then run:
 
 ```bash
 npm ci
@@ -84,12 +71,9 @@ npm run codecs:build
 npm run tauri -- dev
 ```
 
-`codecs:build` получает официальный libjxl v0.12.0, проверяет ожидаемый commit,
-собирает `cjxl`/`djxl` для текущей ОС и архитектуры и кладёт их в
-`src-tauri/resources/codecs/`. Кодеки одной платформы нельзя использовать в
-пакете другой платформы.
+`codecs:build` downloads the official libjxl v0.12.0 source, verifies the expected commit, builds `cjxl` and `djxl` for the current OS and architecture, and places them in `src-tauri/resources/codecs/`. Codecs built for one platform cannot be bundled for another.
 
-Для Ubuntu 22.04/24.04 нужны дополнительные пакеты:
+Ubuntu 22.04/24.04 additionally requires:
 
 ```bash
 sudo apt-get update
@@ -97,10 +81,9 @@ sudo apt-get install -y build-essential git cmake pkg-config \
   libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 ```
 
-На Windows используется MSVC, Visual Studio Build Tools и Windows SDK. На macOS
-нужны Xcode Command Line Tools; минимальная версия системы в конфигурации — 11.0.
+Windows builds use MSVC, Visual Studio Build Tools, and the Windows SDK. macOS builds require Xcode Command Line Tools; the configured minimum system version is 11.0.
 
-## Проверки и сборка
+## Checks and builds
 
 ```bash
 npm run check
@@ -111,43 +94,34 @@ npm run test:integration
 npm run desktop:build
 ```
 
-Установщики создаются в `target/release/bundle/`. Интеграционная проверка запускает
-настоящие `cjxl` и `djxl` на обычном и progressive JPEG и требует точной
-реконструкции. Подробный чек-лист — [docs/TESTING.md](docs/TESTING.md).
+Installers are created under `target/release/bundle/`. The integration test runs real `cjxl` and `djxl` binaries against baseline and progressive JPEG files and requires exact reconstruction. See [docs/TESTING.md](docs/TESTING.md) for the full checklist.
 
-## Ручной релиз
+## Manual release
 
-Релизы намеренно запускаются вручную, по модели проекта `toudocu`:
+Releases are intentionally started by hand:
 
-1. Обновите версии в `package.json`, обоих Cargo-манифестах и
-   `src-tauri/tauri.conf.json`, а также добавьте секцию в `CHANGELOG.md`.
-2. Убедитесь, что изменения находятся в ветке `main` и CI проходит.
-3. Откройте **Actions → Release → Run workflow**.
-4. Укажите версию без префикса `v`, например `0.0.1`.
-5. Workflow проверит версии и отсутствие тега, соберёт отдельный пакет на Windows,
-   macOS и Linux, сформирует `SHA256SUMS`, создаст тег `v0.0.1` и GitHub Release.
+1. Update the version in `package.json`, both Cargo manifests, and `src-tauri/tauri.conf.json`, then add a section to `CHANGELOG.md`.
+2. Make sure the changes are on `main` and CI passes.
+3. Open **Actions → Release → Run workflow**.
+4. Enter the version without the `v` prefix, for example `0.0.1`.
+5. The workflow checks versions and tags, builds packages on Windows, macOS, and Linux, creates `SHA256SUMS`, tags the commit, and publishes the GitHub Release.
 
-Публикация остановится при несовпадении версий, запуске не из `main`, повторном
-теге, пустых release notes или отсутствии установщика. Windows и macOS пакеты
-пока не подписываются; секреты сертификатов в workflow не требуются.
+Publication stops if versions disagree, the workflow is not run from `main`, the tag already exists, release notes are empty, or an installer is missing. Windows and macOS packages are currently unsigned.
 
-## Структура проекта
+## Project structure
 
 ```text
-crates/jxl-core/        независимое Rust-ядро сканирования и конвертации
-src-tauri/              desktop shell, команды Tauri и конфигурация пакетов
-src/                    интерфейс React и TypeScript
-scripts/                сборка и проверка официальных кодеков
-tests/                  минимальные конфигурационные и форматные тесты
-.github/workflows/      CI и ручная публикация релиза
-docs/                   архитектура, безопасность и тестовый чек-лист
+crates/jxl-core/        standalone Rust scanning and conversion core
+src-tauri/              Tauri desktop shell, commands, and bundle configuration
+src/                    React and TypeScript interface, including shared i18n
+scripts/                official codec build and verification scripts
+tests/                  configuration, formatting, and localization checks
+.github/workflows/      CI and manually triggered release workflow
+docs/                   architecture, security, and testing documentation
 ```
 
-Дополнительные документы: [архитектура](docs/ARCHITECTURE.md),
-[границы безопасности](docs/SECURITY.md), [история изменений](CHANGELOG.md) и
-[лицензии зависимостей](THIRD_PARTY.md).
+Additional documents: [architecture](docs/ARCHITECTURE.md), [security boundaries](docs/SECURITY.md), [changelog](CHANGELOG.md), and [third-party licenses](THIRD_PARTY.md).
 
-## Лицензия
+## License
 
-Собственный код распространяется по лицензии [MIT](LICENSE). JPEG XL и связанные
-компоненты сохраняют собственные лицензии; их тексты включаются в релизный пакет.
+The project's own code is available under the [MIT License](LICENSE). JPEG XL and its related components retain their respective licenses; their license texts are included in release packages.

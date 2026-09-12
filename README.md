@@ -79,9 +79,9 @@ Translations live in `src/i18n/locales/` and use stable semantic message IDs, so
 You need Node.js 22.12 or later, Rust 1.88, Git, CMake, and a C/C++ toolchain. Install the [Tauri 2 system prerequisites](https://v2.tauri.app/start/prerequisites/), then run:
 
 ```bash
-npm ci
-npm run codecs:build
-npm run tauri -- dev
+pnpm install --frozen-lockfile
+pnpm run codecs:build
+pnpm run tauri -- dev
 ```
 
 `codecs:build` downloads the official libjxl v0.12.0 source, verifies the expected commit, builds `cjxl` and `djxl` for the current OS and architecture, and places them in `src-tauri/resources/codecs/`. Codecs built for one platform cannot be bundled for another.
@@ -99,14 +99,14 @@ Windows builds use MSVC, Visual Studio Build Tools, and the Windows SDK. macOS b
 ## Checks and builds
 
 ```bash
-npm run check
-npm run wasm:build
-npm run web:build
+pnpm run check
+pnpm run wasm:build
+pnpm run web:build
 cargo test -p jxl-core --locked
 cargo clippy -p jxl-core --all-targets --locked -- -D warnings
-npm run codecs:build
-npm run test:integration
-npm run desktop:build
+pnpm run codecs:build
+pnpm run test:integration
+pnpm run desktop:build
 ```
 
 Installers are created under `target/release/bundle/`. The integration test runs real `cjxl` and `djxl` binaries against baseline and progressive JPEG files and requires exact reconstruction. See [docs/TESTING.md](docs/TESTING.md) for the full checklist.

@@ -17,6 +17,7 @@ export default function App() {
   const t = (id: string, values?: Record<string, string | number>) => intl.formatMessage({ id }, values);
   const [options, setOptions] = useState(loadPreferences);
   const [dragging, setDragging] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const init = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -72,13 +73,12 @@ export default function App() {
     : app.summary ? t(app.summary.wasCancelled ? 'progress.stopped' : app.summary.failed ? 'progress.completedWithErrors' : 'progress.completed') : t('progress.ready');
 
   return <div className="app-shell">
-    <header className="app-header"><div className="brand"><div className="brand-mark">J<span>×</span>L</div><div><h1>JexFold</h1><p>{t('app.tagline')}</p></div></div></header>
-    {!app.desktop && <div className="web-badge">{t('app.webLocal')}</div>}
+    <header className="app-header"><div className="brand"><div className="brand-mark">J<span>×</span>L</div><div><h1>JexFold</h1><p>{t('app.tagline')}</p></div></div><div className="header-actions">{!app.desktop && <div className="web-badge">{t('app.webLocal')}</div>}<button className="settings-trigger" aria-label={t('settings.open')} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><Icon name="settings" size={18} /></button></div></header>
     {app.error && <div className="alert" role="alert"><div><strong>{t('error.actionFailed')}</strong><details><summary>{t('common.details')}</summary><pre>{app.error}</pre></details></div><button className="icon-button" aria-label={t('common.closeMessage')} onClick={() => app.setError('')}>×</button></div>}
 
     <div className="workspace">
-      <main className="panel source-panel">
-        <div className="panel-title"><h2>{t('source.title')}</h2>{app.scan && <button className="text-button push-right" disabled={busy} onClick={app.clear}>{t('source.clear')}</button>}</div>
+      <main className={`panel source-panel ${app.scan ? 'has-queue' : 'is-empty'}`}>
+        {app.scan && <div className="panel-title"><div><span className="eyebrow">{t('source.title')}</span><h2>{t('source.selected')} <span className="count-chip">{intl.formatNumber(total)}</span></h2></div><button className="text-button push-right" disabled={busy} onClick={app.clear}>{t('source.clear')}</button></div>}
         <div className={`dropzone ${dragging ? 'is-dragging' : ''}`}
           onDragEnter={event => { if (!app.desktop) { event.preventDefault(); setDragging(true); } }}
           onDragOver={event => { if (!app.desktop) event.preventDefault(); }}
@@ -87,18 +87,18 @@ export default function App() {
           <input ref={fileInput} hidden type="file" accept={options.mode === 'jpegToJxl' ? '.jpg,.jpeg,image/jpeg' : '.jxl,image/jxl'} multiple onChange={event => { void app.scanWebFiles?.([...(event.target.files ?? [])], options.mode); event.target.value = ''; }} />
           <input ref={folderInput} hidden type="file" accept={options.mode === 'jpegToJxl' ? '.jpg,.jpeg,image/jpeg' : '.jxl,image/jxl'} multiple {...{ webkitdirectory: '' }} onChange={event => { void app.scanWebFiles?.([...(event.target.files ?? [])], options.mode); event.target.value = ''; }} />
           <div className="drop-icon"><Icon name="folder" size={29} /></div>
-          <h3>{dragging ? t('source.dropRelease') : t('source.dropPrompt', { format: options.mode === 'jpegToJxl' ? 'JPEG' : 'JXL' })}</h3><p>{t('source.dropHint')}</p>
-          <div className="source-buttons"><button className="button" disabled={busy} onClick={() => void pickSources(false)}><Icon name="plus" size={16} /> {t('source.selectFiles')}</button><button className="button" disabled={busy} onClick={() => void pickSources(true)}><Icon name="folder" size={16} /> {t('source.selectFolder')}</button></div>
+          <span className="drop-label">{options.mode === 'jpegToJxl' ? 'JPEG → JXL' : 'JXL → JPEG'}</span>
+          <h2>{dragging ? t('source.dropRelease') : app.scan ? t('source.addMore') : t('source.emptyTitle')}</h2><p>{app.scan ? t('source.dropHint') : t('source.emptyHint')}</p>
+          <div className="source-buttons"><button className="button primary" disabled={busy} onClick={() => void pickSources(false)}><Icon name="plus" size={16} /> {t('source.selectFiles')}</button><button className="button" disabled={busy} onClick={() => void pickSources(true)}><Icon name="folder" size={16} /> {t('source.selectFolder')}</button></div>
         </div>
-        {app.scan && <div className="queue-heading"><h3>{t('source.selected')} <span>{intl.formatNumber(total)}</span></h3><span>{formatBytes(app.scan.totalBytes, locale)}</span></div>}
+        {app.scan && <div className="queue-heading"><span>{t('source.filesInQueue')}</span><strong>{formatBytes(app.scan.totalBytes, locale)}</strong></div>}
         <Queue scan={app.scan} rows={app.rows} finished={app.summary !== null} mode={options.mode} />
         {app.scan && app.scan.warningCount > 0 && <details className="scan-warnings"><summary>{t('source.scanWarnings', { count: app.scan.warningCount })}</summary><pre>{app.scan.warnings.join('\n')}</pre>{app.scan.warningCount > app.scan.warnings.length && <p>{t('source.warningsShown', { count: app.scan.warnings.length })}</p>}</details>}
       </main>
-      <Settings options={options} setOptions={next => { if (next.mode !== options.mode) app.clear(); setOptions(next); }} disabled={busy}
-        chooseOutput={() => void pickOutput()} desktop={app.desktop} directOutput={app.capabilities.directDirectoryOutput} outputLabel={app.outputLabel} />
     </div>
 
-    <section className="panel progress-panel" aria-label={t('progress.label')}>
+    {!app.scan && !app.summary && <div className="empty-footnote"><span className="privacy-dot" />{t('footer.localOnly')} <span>·</span> {t('settings.lossless')} <span>·</span> {t('app.offline')}</div>}
+    {app.scan && <section className="panel progress-panel" aria-label={t('progress.label')}>
       <div className="progress-top"><div className="progress-caption"><span className={`activity-dot ${busy ? 'active' : ''}`} /><strong aria-live="polite">{stateText}</strong></div><span className="progress-numbers">{intl.formatNumber(app.metrics.processed)} / {intl.formatNumber(total)}</span></div>
       <progress max="100" value={progress} aria-label={t('progress.filesComplete')} />
       <div className="progress-bottom"><div className="stat"><span>{t('progress.done')}</span><strong>{intl.formatNumber(app.metrics.converted)}</strong></div><div className="stat"><span>{t('progress.skipped')}</span><strong>{intl.formatNumber(app.metrics.skipped)}</strong></div><div className="stat"><span>{t('progress.errors')}</span><strong className={app.metrics.failed ? 'error-number' : ''}>{intl.formatNumber(app.metrics.failed)}</strong></div>
@@ -106,7 +106,9 @@ export default function App() {
         <div className="actions">{working && <button className="button" disabled={app.cancelling} onClick={() => void app.togglePause()}><Icon name="pause" />{t(app.paused ? 'action.resume' : 'action.pause')}</button>}{busy && app.busy !== 'probe' ? <button className="button stop" disabled={app.cancelling} onClick={() => void app.cancel()}><Icon name="stop" />{t('action.stop')}</button> : app.downloadReady > 0 ? <button className="button primary" onClick={() => app.downloadAll?.()}>{t('action.download', { count: app.downloadReady })} <Icon name="arrow" /></button> : <button className="button primary" disabled={busy || !app.scan || !app.tools || (app.desktop && !options.outputDir)} onClick={() => void app.start(options)}>{t(options.mode === 'jpegToJxl' ? 'action.startCompression' : 'action.restoreJpeg')} <Icon name="arrow" /></button>}</div>
       </div>
       {app.summary && <div className="summary-note" role="status">{t('summary.finishedIn', { duration: duration(app.summary.elapsedMs, locale) })}{app.summary.notStarted > 0 ? ` · ${t('summary.notProcessed', { count: app.summary.notStarted })}` : ''}</div>}
-    </section>
-    <footer className="app-footer">{app.desktop && !app.tools && <><span>{t('footer.codecMissing')}</span><button className="text-button" disabled={busy} onClick={() => void pickCodecs()}>{t('footer.chooseFolder')}</button></>}<span className="footer-local">{t('footer.localOnly')}</span></footer>
+    </section>}
+    {settingsOpen && <><button className="drawer-backdrop" aria-label={t('common.close')} onClick={() => setSettingsOpen(false)} /><div className="settings-drawer"><Settings options={options} setOptions={next => { if (next.mode !== options.mode) app.clear(); setOptions(next); }} disabled={busy}
+      chooseOutput={() => void pickOutput()} desktop={app.desktop} directOutput={app.capabilities.directDirectoryOutput} outputLabel={app.outputLabel} onClose={() => setSettingsOpen(false)} /></div></>}
+    <footer className="app-footer">{app.desktop && !app.tools && <><span>{t('footer.codecMissing')}</span><button className="text-button" disabled={busy} onClick={() => void pickCodecs()}>{t('footer.chooseFolder')}</button></>}<span className="footer-local">{t('footer.localOnly')}</span><a className="footer-credit" href="https://nkoksharov.dev/" target="_blank" rel="noreferrer">Created by nkoksharov.dev</a></footer>
   </div>;
 }

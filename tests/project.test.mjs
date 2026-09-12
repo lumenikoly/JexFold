@@ -42,5 +42,5 @@ test('web build is static, scoped for Pages, and uses a verified worker pipeline
   assert.match(wrapper, /JxlEncoderAddJPEGFrame/);
   assert.match(wrapper, /JxlDecoderSetJPEGBuffer/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
-  assert.match(workflow, /npm run wasm:build/);
+  assert.match(workflow, /pnpm run wasm:build/);
 });

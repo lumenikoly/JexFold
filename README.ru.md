@@ -79,9 +79,9 @@ Pages в настройках GitHub.
 Требуются Node.js 22.12+, Rust 1.88, Git, CMake и C/C++ toolchain. Установите [системные зависимости Tauri 2](https://v2.tauri.app/start/prerequisites/), затем выполните:
 
 ```bash
-npm ci
-npm run codecs:build
-npm run tauri -- dev
+pnpm install --frozen-lockfile
+pnpm run codecs:build
+pnpm run tauri -- dev
 ```
 
 `codecs:build` загружает исходный код официального libjxl v0.12.0, проверяет ожидаемый commit, собирает `cjxl` и `djxl` для текущей ОС и архитектуры и кладёт их в `src-tauri/resources/codecs/`. Кодеки одной платформы нельзя включать в пакет другой платформы.
@@ -99,14 +99,14 @@ sudo apt-get install -y build-essential git cmake pkg-config \
 ## Проверки и сборка
 
 ```bash
-npm run check
-npm run wasm:build
-npm run web:build
+pnpm run check
+pnpm run wasm:build
+pnpm run web:build
 cargo test -p jxl-core --locked
 cargo clippy -p jxl-core --all-targets --locked -- -D warnings
-npm run codecs:build
-npm run test:integration
-npm run desktop:build
+pnpm run codecs:build
+pnpm run test:integration
+pnpm run desktop:build
 ```
 
 Установщики создаются в `target/release/bundle/`. Интеграционная проверка запускает настоящие `cjxl` и `djxl` на обычном и progressive JPEG и требует точной реконструкции. Полный чек-лист находится в [docs/TESTING.md](docs/TESTING.md).

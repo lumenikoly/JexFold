@@ -45,7 +45,7 @@ pub async fn probe_tools(directory: Option<PathBuf>, app: AppHandle, state: Stat
                 Err(error) => messages.push(format!("{}: {error}", directory.display())),
             }
         }
-        Err(format!("Кодек не готов. Соберите его командой npm run codecs:build или выберите папку с libjxl 0.12+.\n{}", messages.join("\n")))
+        Err(format!("Кодек не готов. Соберите его командой pnpm run codecs:build или выберите папку с libjxl 0.12+.\n{}", messages.join("\n")))
     }).await.map_err(|e| e.to_string())?
 }
 

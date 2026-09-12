@@ -4,7 +4,7 @@ import { codecsDir, extension, capture } from './common.mjs';
 
 try {
   for (const name of ['cjxl', 'djxl']) {
-    if (!fs.existsSync(path.join(codecsDir, name + extension))) throw new Error(`Missing ${name}. Run npm run codecs:build first.`);
+    if (!fs.existsSync(path.join(codecsDir, name + extension))) throw new Error(`Missing ${name}. Run pnpm run codecs:build first.`);
   }
   const encoder = path.join(codecsDir, 'cjxl' + extension);
   const decoder = path.join(codecsDir, 'djxl' + extension);

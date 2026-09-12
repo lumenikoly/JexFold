@@ -19,10 +19,13 @@ jobs:
       VITE_BASE_PATH: /JexFold/
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 3.1.74
@@ -33,10 +36,10 @@ jobs:
             .tools/libjxl-v0.12.0
             .tools/wasm-v0.12.0
           key: jexfold-wasm-${{ runner.os }}-emsdk-3.1.74-${{ hashFiles('wasm/**', 'scripts/build-wasm.mjs') }}
-      - run: npm ci
-      - run: npm test
-      - run: npm run wasm:build
-      - run: npm run web:build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm run wasm:build
+      - run: pnpm run web:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

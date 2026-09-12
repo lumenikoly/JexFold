@@ -3,16 +3,16 @@ import type { Options, Performance } from '../types';
 import { useLanguage, type LanguagePreference } from '../i18n';
 import { Icon } from './Icon';
 
-export function Settings({ options, setOptions, disabled, chooseOutput, desktop, directOutput, outputLabel }: {
+export function Settings({ options, setOptions, disabled, chooseOutput, desktop, directOutput, outputLabel, onClose }: {
   options: Options; setOptions: (options: Options) => void; disabled: boolean; chooseOutput: () => void;
-  desktop: boolean; directOutput: boolean; outputLabel: string;
+  desktop: boolean; directOutput: boolean; outputLabel: string; onClose?: () => void;
 }) {
   const intl = useIntl();
   const { preference, setPreference } = useLanguage();
   const t = (id: string, values?: Record<string, string | number>) => intl.formatMessage({ id }, values);
   const outputFormat = options.mode === 'jpegToJxl' ? 'JXL' : 'JPEG';
   return <aside className="panel settings">
-    <div className="panel-title"><h2>{t('settings.title')}</h2></div>
+    <div className="panel-title"><h2>{t('settings.title')}</h2>{onClose && <button className="icon-button drawer-close" aria-label={t('common.close')} onClick={onClose}><Icon name="close" size={17} /></button>}</div>
     <label className="field-label" htmlFor="language">{t('settings.language')}</label>
     <select id="language" value={preference} onChange={e => setPreference(e.target.value as LanguagePreference)}>
       <option value="system">{t('language.system')}</option><option value="en">{t('language.english')}</option><option value="ru">{t('language.russian')}</option>

@@ -7,10 +7,10 @@
 
 | Проверка | Результат |
 |---|---|
-| `npm run check` | 8/8 Node-тестов и production-сборка Vite пройдены, Node.js 22.18.0 |
+| `pnpm run check` | 8/8 Node-тестов и production-сборка Vite пройдены, Node.js 22.18.0 |
 | `cargo test -p jxl-core --locked` | 12 пройдено, 2 codec-теста ожидаемо ignored |
 | `cargo clippy -p jxl-core --all-targets --locked -- -D warnings` | Пройдена |
-| `npm run tauri -- build --no-bundle` | Windows release executable успешно собран |
+| `pnpm run tauri -- build --no-bundle` | Windows release executable успешно собран |
 
 Вывод Node-тестов: [node-tests.txt](node-tests.txt).
 
@@ -26,9 +26,9 @@
 матрицей GitHub Actions на Windows, macOS и Linux.
 
 Утилиты `cjxl` и `djxl` не включены в исходную поставку. Нужно выполнить
-`npm run codecs:build` либо предоставить совместимые бинарники самостоятельно.
+`pnpm run codecs:build` либо предоставить совместимые бинарники самостоятельно.
 Обновлённые проверки GitHub Actions подготовлены, но сами задания в этом сеансе
-не запускались. `Cargo.lock` и `package-lock.json` зафиксированы.
+не запускались. `Cargo.lock` и `pnpm-lock.yaml` зафиксированы.
 
 ## Подготовлено для запуска
 
@@ -57,18 +57,18 @@
 Команды:
 
 ```bash
-npm ci
-npm run check
+pnpm install --frozen-lockfile
+pnpm run check
 cargo test -p jxl-core --locked
 cargo clippy -p jxl-core --all-targets --locked -- -D warnings
-npm run codecs:build
-npm run test:integration
-npm run tauri -- build --no-bundle
+pnpm run codecs:build
+pnpm run test:integration
+pnpm run tauri -- build --no-bundle
 ```
 
-`npm run test:integration` требует реальные кодеки и не пропускает тесты молча.
+`pnpm run test:integration` требует реальные кодеки и не пропускает тесты молча.
 Для установщиков используйте ручной workflow `release.yml` либо
-`npm run desktop:build`.
+`pnpm run desktop:build`.
 
 ## Ручная приёмка перед своим архивом
 

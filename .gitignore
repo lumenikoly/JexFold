@@ -9,4 +9,4 @@ src-tauri/resources/codecs/*
 !src-tauri/resources/codecs/README.txt
 public/wasm/*
 !public/wasm/README.md
-# Keep Cargo.lock and package-lock.json after the first dependency resolution.
+# Keep Cargo.lock and pnpm-lock.yaml after the first dependency resolution.

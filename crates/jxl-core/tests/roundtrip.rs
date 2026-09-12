@@ -1,5 +1,5 @@
 //! Real codec integration tests. Explicitly opt in, never silently "pass"
-//! without libjxl: npm run codecs:build && npm run test:integration.
+//! without libjxl: pnpm run codecs:build && pnpm run test:integration.
 use jxl_core::{run_batch, scan_sources, Control, ConversionMode, Options, Performance, Toolchain};
 use std::{fs, path::PathBuf};
 
@@ -13,7 +13,7 @@ fn options(output: PathBuf) -> Options {
 }
 
 #[test]
-#[ignore = "requires libjxl 0.12+; use npm run test:integration"]
+#[ignore = "requires libjxl 0.12+; use pnpm run test:integration"]
 fn reconstructs_baseline_and_progressive_jpeg_with_metadata() {
     let temporary = tempfile::tempdir().unwrap();
     let input = temporary.path().join("photos");
@@ -40,7 +40,7 @@ fn reconstructs_baseline_and_progressive_jpeg_with_metadata() {
 }
 
 #[test]
-#[ignore = "requires libjxl 0.12+; use npm run test:integration"]
+#[ignore = "requires libjxl 0.12+; use pnpm run test:integration"]
 fn corrupt_jpeg_does_not_publish_or_change_original() {
     let temporary = tempfile::tempdir().unwrap();
     let input = temporary.path().join("photos");

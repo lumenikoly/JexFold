@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.25.0",
   "license": "MIT",
   "engines": {
     "node": ">=22.12"
@@ -16,9 +17,9 @@
     "codecs:check": "node scripts/check-codecs.mjs",
     "wasm:build": "node scripts/build-wasm.mjs",
     "web:build": "tsc --noEmit && vite build",
-    "desktop:build": "npm run codecs:check && tauri build",
+    "desktop:build": "pnpm run codecs:check && tauri build",
     "test": "node --test tests/format.test.mjs tests/project.test.mjs",
-    "check": "npm test && npm run build",
+    "check": "pnpm test && pnpm run build",
     "test:rust": "cargo test -p jxl-core",
     "test:integration": "node scripts/test-integration.mjs"
   },

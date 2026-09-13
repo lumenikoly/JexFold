@@ -18,6 +18,7 @@
     "wasm:build": "node scripts/build-wasm.mjs",
     "web:build": "tsc --noEmit && vite build",
     "desktop:build": "pnpm run codecs:check && tauri build",
+    "desktop:portable": "pnpm run codecs:check && tauri build --no-bundle && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1",
     "test": "node --test tests/format.test.mjs tests/project.test.mjs",
     "check": "pnpm test && pnpm run build",
     "test:rust": "cargo test -p jxl-core",

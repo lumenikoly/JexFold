@@ -1,6 +1,7 @@
 node_modules/
 dist/
 target/
+release-assets/
 .tools/
 .DS_Store
 *.log

@@ -107,9 +107,20 @@ cargo clippy -p jxl-core --all-targets --locked -- -D warnings
 pnpm run codecs:build
 pnpm run test:integration
 pnpm run desktop:build
+pnpm run desktop:portable
 ```
 
-Installers are created under `target/release/bundle/`. The integration test runs real `cjxl` and `djxl` binaries against baseline and progressive JPEG files and requires exact reconstruction. See [docs/TESTING.md](docs/TESTING.md) for the full checklist.
+Installers are created under `target/release/bundle/`. On Windows, `desktop:portable` creates a ZIP archive there that can be extracted anywhere and launched through `JexFold.exe` without installation. Keep the archive's `codecs` directory next to the executable. The integration test runs real `cjxl` and `djxl` binaries against baseline and progressive JPEG files and requires exact reconstruction. See [docs/TESTING.md](docs/TESTING.md) for the full checklist.
+
+For a complete local release build, run the target matching the host operating system:
+
+```bash
+make release-windows  # NSIS installer and portable ZIP
+make release-macos    # DMG
+make release-linux    # DEB and AppImage
+```
+
+Each target installs the locked dependencies, runs the checks, builds the platform codecs, and creates the packages. Outputs are written under `target/release/bundle/`; `target/`, built codecs, and `release-assets/` are ignored by Git.
 
 ## Manual release
 

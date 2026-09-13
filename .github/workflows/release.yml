@@ -102,6 +102,10 @@ jobs:
         run: npm run test:integration
       - name: Build installers
         run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
+      - name: Build portable package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/package-portable.ps1
       - name: Collect release assets
         shell: pwsh
         env:
@@ -109,12 +113,13 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: |
           New-Item -ItemType Directory -Force release-assets | Out-Null
-          $extensions = @('.exe', '.dmg', '.deb', '.AppImage')
+          $extensions = @('.exe', '.dmg', '.deb', '.AppImage', '.zip')
           $files = Get-ChildItem target/release/bundle -Recurse -File | Where-Object { $extensions -contains $_.Extension }
           if (-not $files) { throw 'No installer was produced.' }
           $arch = $env:RUNNER_ARCH.ToLowerInvariant()
           foreach ($file in $files) {
-            $name = "JexFold_${env:VERSION}_${env:PLATFORM}_${arch}$($file.Extension)"
+            $suffix = if ($file.Extension -eq '.zip') { '_portable' } else { '' }
+            $name = "JexFold_${env:VERSION}_${env:PLATFORM}_${arch}${suffix}$($file.Extension)"
             Copy-Item -LiteralPath $file.FullName -Destination (Join-Path release-assets $name)
           }
       - uses: actions/upload-artifact@v6

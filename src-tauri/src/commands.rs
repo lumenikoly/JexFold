@@ -24,6 +24,10 @@ pub async fn probe_tools(directory: Option<PathBuf>, app: AppHandle, state: Stat
     let mut candidates = Vec::new();
     if let Some(directory) = directory { candidates.push(directory); }
     else {
+        // A portable Windows build keeps the codecs next to JexFold.exe.
+        if let Ok(executable) = std::env::current_exe() {
+            if let Some(directory) = executable.parent() { candidates.push(directory.join("codecs")); }
+        }
         if let Ok(path) = app.path().resolve("codecs", BaseDirectory::Resource) { candidates.push(path); }
         #[cfg(debug_assertions)]
         candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/codecs"));

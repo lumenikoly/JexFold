@@ -69,6 +69,7 @@
   "performance.quiet": "Бережно",
   "performance.balanced": "Сбалансированно",
   "performance.fast": "Быстрее",
+  "performance.maximum": "Максимальная скорость",
   "settings.preserveMtime": "Сохранить дату изменения файла",
   "settings.skipLarger": "Не сохранять JXL без экономии места",
   "settings.lossless": "Без потери качества",

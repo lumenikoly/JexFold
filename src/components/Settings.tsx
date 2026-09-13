@@ -33,7 +33,7 @@ export function Settings({ options, setOptions, disabled, chooseOutput, desktop,
       <p className="hint">{t('settings.effortHint')}</p></>}
       <label className="field-label" htmlFor="performance">{t('settings.performance')}</label>
       <select id="performance" value={options.performance} onChange={e => setOptions({ ...options, performance: e.target.value as Performance })}>
-        <option value="quiet">{t('performance.quiet')}</option><option value="balanced">{t('performance.balanced')}</option><option value="fast">{t('performance.fast')}</option>
+        <option value="quiet">{t('performance.quiet')}</option><option value="balanced">{t('performance.balanced')}</option><option value="fast">{t('performance.fast')}</option><option value="maximum">{t('performance.maximum')}</option>
       </select>
       <div className="options-list">
         {desktop && <label className="checkbox-row"><input type="checkbox" checked={options.preserveMtime} onChange={e => setOptions({ ...options, preserveMtime: e.target.checked })} /><span>{t('settings.preserveMtime')}</span></label>}

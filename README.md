@@ -55,10 +55,10 @@ Example output layout:
 ```text
 Source:      /photos/2026/IMG_001.JPG
 Destination: /archive
-Result:      /archive/photos/2026/IMG_001.JPG.jxl
+Result:      /archive/photos/2026/IMG_001.jxl
 ```
 
-The double extension preserves the original filename and keeps identically named `.jpg` and `.jpeg` files distinct. An `existing` status only means the destination file was already present and was not overwritten; its contents are not reverified on a later run.
+The JPEG extension is replaced with `.jxl`. If identically named `.jpg` and `.jpeg` files share a folder, they map to the same result; the first is created and the other receives `existing`. That status only means the destination file was already present and was not overwritten; its contents are not reverified on a later run.
 
 ### Language
 

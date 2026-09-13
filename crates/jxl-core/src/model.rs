@@ -35,6 +35,7 @@ pub enum Performance {
     #[default]
     Balanced,
     Fast,
+    Maximum,
 }
 
 impl Performance {
@@ -50,6 +51,10 @@ impl Performance {
             Self::Fast => {
                 let workers = (usable / 2).clamp(1, 4);
                 (workers, (usable / workers).clamp(1, 8))
+            }
+            Self::Maximum => {
+                let workers = usable.clamp(1, 8);
+                (workers, (usable / workers).max(1))
             }
         }
     }
@@ -117,11 +122,17 @@ mod tests {
     #[test]
     fn budget_never_oversubscribes() {
         for cpus in 1..256 {
-            for mode in [Performance::Quiet, Performance::Balanced, Performance::Fast] {
+            for mode in [Performance::Quiet, Performance::Balanced, Performance::Fast, Performance::Maximum] {
                 let (workers, threads) = mode.budget(cpus);
                 assert!(workers >= 1 && threads >= 1);
                 assert!(workers * threads <= cpus);
             }
         }
+    }
+    #[test]
+    fn maximum_mode_runs_up_to_eight_files_at_once() {
+        assert_eq!(Performance::Maximum.budget(4), (3, 1));
+        assert_eq!(Performance::Maximum.budget(9), (8, 1));
+        assert_eq!(Performance::Maximum.budget(17), (8, 2));
     }
 }

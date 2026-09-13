@@ -13,7 +13,7 @@ export function loadPreferences(): Options {
       mode: raw.mode === 'jxlToJpeg' ? 'jxlToJpeg' : 'jpegToJxl',
       outputDir: typeof raw.outputDir === 'string' ? raw.outputDir : '',
       effort: typeof raw.effort === 'number' && Number.isInteger(raw.effort) && raw.effort >= 3 && raw.effort <= 9 ? raw.effort : 7,
-      performance: raw.performance === 'quiet' || raw.performance === 'balanced' || raw.performance === 'fast' ? raw.performance : 'balanced',
+      performance: raw.performance === 'quiet' || raw.performance === 'balanced' || raw.performance === 'fast' || raw.performance === 'maximum' ? raw.performance : 'balanced',
       preserveMtime: typeof raw.preserveMtime === 'boolean' ? raw.preserveMtime : true,
       skipLarger: typeof raw.skipLarger === 'boolean' ? raw.skipLarger : true,
     };

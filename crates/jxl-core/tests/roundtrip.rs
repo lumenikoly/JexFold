@@ -30,7 +30,7 @@ fn reconstructs_baseline_and_progressive_jpeg_with_metadata() {
     assert_eq!(summary.failed, 0);
     assert_eq!(fs::read(input.join("Фото с пробелами.JPG")).unwrap(), baseline);
     assert_eq!(fs::read(input.join("progressive.jpeg")).unwrap(), progressive);
-    assert!(output.join("photos/Фото с пробелами.JPG.jxl").is_file());
+    assert!(output.join("photos/Фото с пробелами.jxl").is_file());
     assert!(!fs::read_dir(&output).unwrap().any(|f| f.unwrap().file_name().to_string_lossy().starts_with("jxl-report-")));
     // A second run must skip, not overwrite or invent successful validation.
     let again = run_batch(&scan, &options(output.clone()), &toolchain(), &control, |_| {}).unwrap();
@@ -53,7 +53,7 @@ fn corrupt_jpeg_does_not_publish_or_change_original() {
     let result = run_batch(&scan, &options(output.clone()), &toolchain(), &c, |_| {}).unwrap();
     assert_eq!(result.failed, 1);
     assert_eq!(fs::read(input.join("broken.jpg")).unwrap(), bytes);
-    assert!(!output.join("photos/broken.jpg.jxl").exists());
+    assert!(!output.join("photos/broken.jxl").exists());
 }
 
 #[test]

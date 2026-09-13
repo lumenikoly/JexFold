@@ -18,7 +18,7 @@ export interface ToolInfo {
   encoderVersion: string;
   decoderVersion: string;
 }
-export type Performance = 'quiet' | 'balanced' | 'fast';
+export type Performance = 'quiet' | 'balanced' | 'fast' | 'maximum';
 export type ConversionMode = 'jpegToJxl' | 'jxlToJpeg';
 export interface Options {
   mode: ConversionMode;

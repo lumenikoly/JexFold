@@ -69,6 +69,7 @@
   "performance.quiet": "Gentle",
   "performance.balanced": "Balanced",
   "performance.fast": "Faster",
+  "performance.maximum": "Maximum speed",
   "settings.preserveMtime": "Preserve file modification date",
   "settings.skipLarger": "Do not keep JXL files without space savings",
   "settings.lossless": "No quality loss",

@@ -148,7 +148,7 @@ mod tests {
         let result = convert_one(&source, &root, &options, &Toolchain { encoder, decoder }, 1,
             &Control::default(), &|_| {});
         assert_eq!(result.status, ItemStatus::Failed);
-        assert!(!root.join("original.jpg.jxl").exists());
+        assert!(!root.join("original.jxl").exists());
         assert_eq!(fs::read(input).unwrap(), original);
         assert_eq!(fs::read_dir(root).unwrap().count(), 0);
     }

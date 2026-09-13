@@ -6,9 +6,12 @@ pub(crate) fn output_relative(relative: &Path, mode: ConversionMode) -> Result<P
     if relative.as_os_str().is_empty() || relative.components().any(|c| !matches!(c, Component::Normal(_))) {
         return Err(Error::Invalid("Небезопасный относительный путь".into()));
     }
-    // Keep the JPEG extension: a.jpg and a.jpeg must never map to one target.
     match mode {
-        ConversionMode::JpegToJxl => { let mut result = relative.as_os_str().to_os_string(); result.push(".jxl"); Ok(PathBuf::from(result)) }
+        ConversionMode::JpegToJxl => {
+            let mut result = relative.to_path_buf();
+            result.set_extension("jxl");
+            Ok(result)
+        }
         ConversionMode::JxlToJpeg => {
             let mut result = relative.to_path_buf();
             result.set_extension("");
@@ -109,9 +112,9 @@ pub(crate) fn publish(stage: &Path, target: &Path) -> Result<Option<String>> {
 mod tests {
     use super::*;
     #[test]
-    fn keeps_extensions_to_avoid_collisions() {
-        assert_eq!(output_relative(Path::new("folder/a.jpg"), ConversionMode::JpegToJxl).unwrap(), PathBuf::from("folder/a.jpg.jxl"));
-        assert_ne!(output_relative(Path::new("a.jpg"), ConversionMode::JpegToJxl).unwrap(), output_relative(Path::new("a.jpeg"), ConversionMode::JpegToJxl).unwrap());
+    fn replaces_jpeg_extension() {
+        assert_eq!(output_relative(Path::new("folder/a.jpg"), ConversionMode::JpegToJxl).unwrap(), PathBuf::from("folder/a.jxl"));
+        assert_eq!(output_relative(Path::new("folder/a.JPEG"), ConversionMode::JpegToJxl).unwrap(), PathBuf::from("folder/a.jxl"));
         assert_eq!(output_relative(Path::new("folder/a.jpg.jxl"), ConversionMode::JxlToJpeg).unwrap(), PathBuf::from("folder/a.jpg"));
         assert_eq!(output_relative(Path::new("folder/a.jxl"), ConversionMode::JxlToJpeg).unwrap(), PathBuf::from("folder/a.jpg"));
     }
@@ -146,7 +149,7 @@ mod tests {
         let temp = tempfile::tempdir().unwrap();
         let outside = tempfile::tempdir().unwrap();
         std::os::unix::fs::symlink(outside.path(), temp.path().join("linked")).unwrap();
-        assert!(safe_parent(temp.path(), Path::new("linked/a.jpg.jxl")).is_err());
+        assert!(safe_parent(temp.path(), Path::new("linked/a.jxl")).is_err());
     }
     #[test]
     fn source_modified_after_scan_is_rejected() {

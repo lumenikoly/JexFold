@@ -6,7 +6,7 @@ import { WorkerPool } from './worker-pool';
 type SelectedFile = { file: File; relative: string };
 const emptyMetrics = (): Metrics => ({ processed: 0, converted: 0, failed: 0, skipped: 0, inputBytes: 0, outputBytes: 0 });
 const accepted = (name: string, mode: ConversionMode) => mode === 'jpegToJxl' ? /\.(jpe?g)$/i.test(name) : /\.jxl$/i.test(name);
-const outputName = (relative: string, mode: ConversionMode) => mode === 'jpegToJxl' ? `${relative}.jxl` : (/\.jxl$/i.test(relative) ? relative.slice(0, -4) : `${relative}.jpg`);
+const outputName = (relative: string, mode: ConversionMode) => mode === 'jpegToJxl' ? relative.replace(/\.jpe?g$/i, '.jxl') : (/\.jxl$/i.test(relative) ? relative.slice(0, -4) : `${relative}.jpg`);
 
 async function enumerate(handle: FileSystemDirectoryHandle, prefix = ''): Promise<SelectedFile[]> {
   const files: SelectedFile[] = [];
@@ -87,7 +87,7 @@ export function useWebConverter() {
     setBusy('convert'); setSummary(null); setError(''); setPaused(false); setCancelling(false); setMetrics(emptyMetrics());
     rows.current.clear(); downloads.current.clear(); setDownloadReady(0); cancelled.current = false; pausedRef.current = false;
     const started = performance.now();
-    const concurrency = options.performance === 'quiet' ? 1 : options.performance === 'fast' ? webCapabilities.maxRecommendedConcurrency : Math.min(2, webCapabilities.maxRecommendedConcurrency);
+    const concurrency = options.performance === 'quiet' ? 1 : options.performance === 'fast' || options.performance === 'maximum' ? webCapabilities.maxRecommendedConcurrency : Math.min(2, webCapabilities.maxRecommendedConcurrency);
     const activePool = new WorkerPool(concurrency, new URL('wasm/jexfold_codec.js', document.baseURI).href);
     pool.current = activePool;
     const totals = emptyMetrics();

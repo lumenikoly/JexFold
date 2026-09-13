@@ -1562,7 +1562,7 @@ dependencies = [
 
 [[package]]
 name = "jexfold"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "jxl-core",
  "serde",
@@ -1703,7 +1703,7 @@ dependencies = [
 
 [[package]]
 name = "jxl-core"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "filetime",
  "serde",

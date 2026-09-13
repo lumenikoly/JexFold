@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version without the v prefix (for example 0.0.1)
+        description: Version without the v prefix (for example 0.0.2)
         required: true
-        default: 0.0.1
+        default: 0.0.2
         type: string
 
 concurrency:

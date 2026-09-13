@@ -1,8 +1,6 @@
 name: Web / GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:

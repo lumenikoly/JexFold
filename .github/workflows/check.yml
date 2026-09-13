@@ -1,7 +1,5 @@
 name: Check and build
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,9 +12,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.88.0
@@ -31,7 +33,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install JS dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Frontend checks
         run: npm run check
       - name: Core unit tests

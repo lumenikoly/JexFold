@@ -17,7 +17,7 @@ The application uses the official `cjxl` and `djxl` tools, processes everything 
 - English and Russian UI, system-language detection, and a saved language preference;
 - local processing with no network requests while converting files.
 
-The application does not change JPEG quality, dimensions, or embedded metadata.
+The application does not change JPEG quality, dimensions, or embedded metadata. When the metadata option is enabled, the desktop build also preserves modification/access times, POSIX permissions on macOS/Linux and the original creation time on Windows.
 
 ## Installation
 
@@ -70,7 +70,7 @@ Translations live in `src/i18n/locales/` and use stable semantic message IDs, so
 
 - The destination filesystem must support hard links, such as NTFS, APFS, or ext4. FAT/exFAT is unsupported; SMB/NFS behavior depends on the implementation.
 - Each active job temporarily needs enough free space for the JPEG, JXL, and reconstructed JPEG.
-- File modification time is preserved, but ACLs, Finder tags, extended attributes, and separate XMP/AAE files are not.
+- Embedded EXIF, ICC, IPTC, and XMP are retained as part of the original JPEG and covered by byte-for-byte restoration checks. The desktop build also preserves modification/access times, POSIX permissions on macOS/Linux, and the original creation time on Windows. ACLs, Windows attributes, Finder tags, extended attributes, and separate XMP/AAE files are not copied.
 - Symbolic links are not traversed. A queue may contain at most 250,000 files.
 - Before deleting any originals yourself, verify your backup and restore several representative files.
 

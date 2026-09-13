@@ -63,10 +63,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.25.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -81,7 +81,15 @@ jobs:
           sudo apt-get install -y build-essential cmake pkg-config libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: Configure MSVC
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $installPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $installPath) { throw 'Visual Studio C++ tools were not found.' }
+          $devCmd = Join-Path $installPath 'Common7\Tools\VsDevCmd.bat'
+          cmd /s /c "`"$devCmd`" -arch=x64 -host_arch=x64 && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV }
+          }
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Verify source
@@ -109,7 +117,7 @@ jobs:
             $name = "JexFold_${env:VERSION}_${env:PLATFORM}_${arch}$($file.Extension)"
             Copy-Item -LiteralPath $file.FullName -Destination (Join-Path release-assets $name)
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: release-${{ matrix.platform }}
           path: release-assets/*
@@ -122,7 +130,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: release-*
           path: release-assets

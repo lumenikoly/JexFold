@@ -1,5 +1,5 @@
 //! Verified, non-destructive JPEG recompression. No dependency on Tauri or a GUI.
-#![forbid(unsafe_code)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 mod batch;
 mod control;

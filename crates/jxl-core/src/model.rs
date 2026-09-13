@@ -10,6 +10,12 @@ pub struct SourceFile {
     pub size: u64,
     #[serde(skip)]
     pub modified: Option<SystemTime>,
+    #[serde(skip)]
+    pub accessed: Option<SystemTime>,
+    #[serde(skip)]
+    pub created: Option<SystemTime>,
+    #[serde(skip)]
+    pub permissions: Option<std::fs::Permissions>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -67,7 +73,8 @@ pub struct Options {
     pub output_dir: PathBuf,
     pub effort: u8,
     pub performance: Performance,
-    pub preserve_mtime: bool,
+    #[serde(alias = "preserveMtime")]
+    pub preserve_metadata: bool,
     pub skip_larger: bool,
 }
 

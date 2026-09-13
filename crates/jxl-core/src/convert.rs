@@ -49,7 +49,8 @@ pub(crate) fn convert_one(
             if signature != [0xff, 0xd8, 0xff] { return Err(Error::Invalid("Результат не содержит сигнатуру JPEG".into())); }
             files::ensure_stamp(source)?;
             if !files::equal_files(&source.source, &snapshot, control)? { return Err(Error::SourceChanged); }
-            if options.preserve_mtime { if let Some(modified) = source.modified { filetime::set_file_mtime(&stage, filetime::FileTime::from_system_time(modified))?; } }
+            files::sync_stage(&stage)?;
+            if options.preserve_metadata { files::preserve_metadata(source, &stage)?; }
             control.check()?;
             let warning = files::publish(&stage, &target)?;
             return Ok(Outcome { status: ItemStatus::Converted, output_bytes: Some(size), sha256: Some(hash), message: warning });
@@ -86,11 +87,8 @@ pub(crate) fn convert_one(
         if options.skip_larger && size >= source.size {
             return Ok(Outcome { status: ItemStatus::NotSmaller, output_bytes: Some(size), sha256: Some(hash), message: Some("Размер не уменьшился; JXL не сохранён".into()) });
         }
-        if options.preserve_mtime {
-            if let Some(modified) = source.modified {
-                filetime::set_file_mtime(&stage, filetime::FileTime::from_system_time(modified))?;
-            }
-        }
+        files::sync_stage(&stage)?;
+        if options.preserve_metadata { files::preserve_metadata(source, &stage)?; }
         control.check()?;
         let warning = files::publish(&stage, &target)?;
         // TempDir now removes snapshot/reconstruction and its link to stage.
@@ -142,9 +140,10 @@ mod tests {
             fs::set_permissions(tool, fs::Permissions::from_mode(0o700)).unwrap();
         }
         let source = SourceFile { id: 0, source: input.clone(), relative: "original.jpg".into(),
-            size: meta.len(), modified: meta.modified().ok() };
+            size: meta.len(), modified: meta.modified().ok(), accessed: meta.accessed().ok(),
+            created: meta.created().ok(), permissions: Some(meta.permissions()) };
         let options = Options { mode: ConversionMode::JpegToJxl, output_dir: root.clone(), effort: 7, performance: crate::Performance::Quiet,
-            preserve_mtime: true, skip_larger: false };
+            preserve_metadata: true, skip_larger: false };
         let result = convert_one(&source, &root, &options, &Toolchain { encoder, decoder }, 1,
             &Control::default(), &|_| {});
         assert_eq!(result.status, ItemStatus::Failed);

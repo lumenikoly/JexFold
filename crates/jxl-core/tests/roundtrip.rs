@@ -9,7 +9,7 @@ fn toolchain() -> Toolchain {
     Toolchain::from_directory(&PathBuf::from(dir)).unwrap()
 }
 fn options(output: PathBuf) -> Options {
-    Options { mode: ConversionMode::JpegToJxl, output_dir: output, effort: 7, performance: Performance::Quiet, preserve_mtime: true, skip_larger: false }
+    Options { mode: ConversionMode::JpegToJxl, output_dir: output, effort: 7, performance: Performance::Quiet, preserve_metadata: true, skip_larger: false }
 }
 
 #[test]

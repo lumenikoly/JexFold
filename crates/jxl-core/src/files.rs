@@ -54,6 +54,44 @@ pub(crate) fn ensure_stamp(source: &SourceFile) -> Result<()> {
     Ok(())
 }
 
+/// Copy portable filesystem metadata and, on Windows, the creation time.
+/// Embedded JPEG metadata is preserved by libjxl's exact reconstruction stream.
+pub(crate) fn preserve_metadata(source: &SourceFile, destination: &Path) -> Result<()> {
+    if let (Some(accessed), Some(modified)) = (source.accessed, source.modified) {
+        filetime::set_file_times(destination, filetime::FileTime::from_system_time(accessed), filetime::FileTime::from_system_time(modified))?;
+    } else if let Some(modified) = source.modified {
+        filetime::set_file_mtime(destination, filetime::FileTime::from_system_time(modified))?;
+    }
+    #[cfg(windows)]
+    if let Some(created) = source.created { set_windows_creation_time(destination, created)?; }
+    #[cfg(unix)]
+    if let Some(permissions) = &source.permissions { fs::set_permissions(destination, permissions.clone())?; }
+    Ok(())
+}
+
+pub(crate) fn sync_stage(stage: &Path) -> Result<()> {
+    File::options().read(true).write(true).open(stage)?.sync_all()?;
+    Ok(())
+}
+
+#[cfg(windows)]
+fn set_windows_creation_time(path: &Path, created: std::time::SystemTime) -> std::io::Result<()> {
+    use std::{os::windows::{fs::OpenOptionsExt, io::AsRawHandle}, time::UNIX_EPOCH};
+    use windows_sys::Win32::{Foundation::FILETIME, Storage::FileSystem::{FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_WRITE_ATTRIBUTES, SetFileTime}};
+    const WINDOWS_TO_UNIX_100NS: u64 = 116_444_736_000_000_000;
+    let since_unix = created.duration_since(UNIX_EPOCH).map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "Дата создания находится до эпохи Unix"))?;
+    let ticks = WINDOWS_TO_UNIX_100NS.checked_add(since_unix.as_secs().saturating_mul(10_000_000))
+        .and_then(|value| value.checked_add(u64::from(since_unix.subsec_nanos()) / 100))
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "Дата создания вне диапазона Windows"))?;
+    let creation = FILETIME { dwLowDateTime: ticks as u32, dwHighDateTime: (ticks >> 32) as u32 };
+    let file = File::options().access_mode(FILE_WRITE_ATTRIBUTES)
+        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE).open(path)?;
+    // SAFETY: the handle belongs to the live `file`; the pointer is valid for
+    // this call, while null pointers request no change to the other timestamps.
+    let succeeded = unsafe { SetFileTime(file.as_raw_handle(), &creation, std::ptr::null(), std::ptr::null()) };
+    if succeeded == 0 { Err(std::io::Error::last_os_error()) } else { Ok(()) }
+}
+
 /// Streaming snapshot and SHA-256. Memory is independent of input file size.
 pub(crate) fn snapshot(source: &Path, destination: &Path, control: &Control) -> Result<String> {
     let mut input = File::open(source)?;
@@ -95,7 +133,6 @@ pub(crate) fn equal_files(a: &Path, b: &Path, control: &Control) -> Result<bool>
 /// Atomic, no-clobber publication. A hard link makes the complete, synced
 /// file visible, and fails if the target exists. No unsafe overwrite fallback.
 pub(crate) fn publish(stage: &Path, target: &Path) -> Result<Option<String>> {
-    File::options().read(true).write(true).open(stage)?.sync_all()?;
     fs::hard_link(stage, target).map_err(|e| Error::Invalid(format!(
         "Не удалось безопасно создать {}: {e}. Нужна файловая система с поддержкой жёстких ссылок (например NTFS/APFS/ext4).", target.display()
     )))?;
@@ -158,9 +195,38 @@ mod tests {
         fs::write(&path, b"original").unwrap();
         let m = fs::metadata(&path).unwrap();
         let source = SourceFile { id: 0, source: path.clone(), relative: "photo.jpg".into(),
-            size: m.len(), modified: m.modified().ok() };
+            size: m.len(), modified: m.modified().ok(), accessed: m.accessed().ok(),
+            created: m.created().ok(), permissions: Some(m.permissions()) };
         fs::write(&path, b"changed length").unwrap();
         assert!(matches!(ensure_stamp(&source), Err(Error::SourceChanged)));
+    }
+
+    #[test]
+    fn preserves_available_filesystem_timestamps() {
+        let dir = tempfile::tempdir().unwrap();
+        let input = dir.path().join("source.jpg");
+        let output = dir.path().join("output.jxl");
+        fs::write(&input, b"source").unwrap();
+        fs::write(&output, b"output").unwrap();
+        let wanted = filetime::FileTime::from_unix_time(1_700_000_000, 123_456_700);
+        filetime::set_file_times(&input, wanted, wanted).unwrap();
+        let metadata = fs::metadata(&input).unwrap();
+        let source = SourceFile {
+            id: 0,
+            source: input,
+            relative: "source.jpg".into(),
+            size: metadata.len(),
+            modified: metadata.modified().ok(),
+            accessed: metadata.accessed().ok(),
+            created: metadata.created().ok(),
+            permissions: Some(metadata.permissions()),
+        };
+        preserve_metadata(&source, &output).unwrap();
+        let result = fs::metadata(output).unwrap();
+        assert_eq!(result.modified().ok(), source.modified);
+        assert_eq!(result.accessed().ok(), source.accessed);
+        #[cfg(windows)]
+        assert_eq!(result.created().ok(), source.created);
     }
 
 }

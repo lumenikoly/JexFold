@@ -25,7 +25,7 @@ export interface Options {
   outputDir: string;
   effort: number;
   performance: Performance;
-  preserveMtime: boolean;
+  preserveMetadata: boolean;
   skipLarger: boolean;
 }
 export type ItemStatus = 'converted' | 'existing' | 'notSmaller' | 'failed' | 'cancelled';

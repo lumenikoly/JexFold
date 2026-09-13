@@ -70,7 +70,7 @@
   "performance.balanced": "Balanced",
   "performance.fast": "Faster",
   "performance.maximum": "Maximum speed",
-  "settings.preserveMtime": "Preserve file modification date",
+  "settings.preserveMetadata": "Preserve original file dates and attributes",
   "settings.skipLarger": "Do not keep JXL files without space savings",
   "settings.lossless": "No quality loss",
   "settings.verifyAfterCompression": "Every file is verified after compression",

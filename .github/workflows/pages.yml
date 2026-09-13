@@ -13,22 +13,25 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      pages: read
     env:
       VITE_BASE_PATH: /JexFold/
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.25.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-      - uses: mymindstorm/setup-emsdk@v14
+      - uses: mymindstorm/setup-emsdk@v15
         with:
           version: 3.1.74
           actions-cache-folder: emsdk-cache
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             .tools/libjxl-v0.12.0
@@ -38,8 +41,8 @@ jobs:
       - run: pnpm test
       - run: pnpm run wasm:build
       - run: pnpm run web:build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -55,4 +58,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

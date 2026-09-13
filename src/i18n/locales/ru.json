@@ -70,7 +70,7 @@
   "performance.balanced": "Сбалансированно",
   "performance.fast": "Быстрее",
   "performance.maximum": "Максимальная скорость",
-  "settings.preserveMtime": "Сохранить дату изменения файла",
+  "settings.preserveMetadata": "Сохранить исходные даты и атрибуты файла",
   "settings.skipLarger": "Не сохранять JXL без экономии места",
   "settings.lossless": "Без потери качества",
   "settings.verifyAfterCompression": "Каждый файл проверяется после сжатия",

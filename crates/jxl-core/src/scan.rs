@@ -116,6 +116,8 @@ fn add_file(path: &Path, relative: PathBuf, mode: ConversionMode, result: &mut S
     result.files.push(SourceFile {
         id: result.files.len(), source: path.to_path_buf(), relative,
         size: metadata.len(), modified: metadata.modified().ok(),
+        accessed: metadata.accessed().ok(), created: metadata.created().ok(),
+        permissions: Some(metadata.permissions()),
     });
     Ok(())
 }

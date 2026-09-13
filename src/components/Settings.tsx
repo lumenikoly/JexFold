@@ -36,7 +36,7 @@ export function Settings({ options, setOptions, disabled, chooseOutput, desktop,
         <option value="quiet">{t('performance.quiet')}</option><option value="balanced">{t('performance.balanced')}</option><option value="fast">{t('performance.fast')}</option><option value="maximum">{t('performance.maximum')}</option>
       </select>
       <div className="options-list">
-        {desktop && <label className="checkbox-row"><input type="checkbox" checked={options.preserveMtime} onChange={e => setOptions({ ...options, preserveMtime: e.target.checked })} /><span>{t('settings.preserveMtime')}</span></label>}
+        {desktop && <label className="checkbox-row"><input type="checkbox" checked={options.preserveMetadata} onChange={e => setOptions({ ...options, preserveMetadata: e.target.checked })} /><span>{t('settings.preserveMetadata')}</span></label>}
         {options.mode === 'jpegToJxl' && <label className="checkbox-row"><input type="checkbox" checked={options.skipLarger} onChange={e => setOptions({ ...options, skipLarger: e.target.checked })} /><span>{t('settings.skipLarger')}</span></label>}
       </div>
     </fieldset>

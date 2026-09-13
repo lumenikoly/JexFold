@@ -28,6 +28,17 @@ export default function App() {
   useEffect(() => { savePreferences(options); }, [options]);
   useEffect(() => { if (!init.current) { init.current = true; void app.probe(); } }, [app.probe]);
   useEffect(() => {
+    if (!app.desktop || options.mode !== 'jpegToJxl' || !app.scan?.roots.length) return;
+    const parent = (path: string) => path.slice(0, Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')));
+    const firstFile = app.scan.files[0]?.source ?? '';
+    const sourceDirectory = app.scan.directoryRoots.length === 1
+      ? app.scan.directoryRoots[0]
+      : app.scan.directoryRoots.length === 0 && app.scan.files.every(file => parent(file.source) === parent(firstFile))
+        ? parent(firstFile)
+        : undefined;
+    if (sourceDirectory) setOptions(current => ({ ...current, outputDir: `${sourceDirectory}${sourceDirectory.endsWith('/') || sourceDirectory.endsWith('\\') ? '' : sourceDirectory.includes('\\') ? '\\' : '/'}jxl` }));
+  }, [app.desktop, app.scan, options.mode]);
+  useEffect(() => {
     if (!app.desktop) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
@@ -55,7 +66,7 @@ export default function App() {
   async function pickOutput() {
     try {
       if (!app.desktop) { await app.selectOutputDirectory?.(); return; }
-      const selected = await open({ directory: true, multiple: false, title: t('dialog.outputFolder', { format: options.mode === 'jpegToJxl' ? 'JXL' : 'JPEG' }) });
+      const selected = await open({ directory: true, multiple: false, defaultPath: options.outputDir || undefined, title: t('dialog.outputFolder', { format: options.mode === 'jpegToJxl' ? 'JXL' : 'JPEG' }) });
       if (typeof selected === 'string') setOptions(current => ({ ...current, outputDir: selected }));
     } catch (e) { app.setError(String(e)); }
   }

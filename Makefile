@@ -1,6 +1,6 @@
 PNPM ?= pnpm
 
-.PHONY: help release-prepare release-windows release-macos release-linux
+.PHONY: help release-check release-prepare release-windows release-macos release-linux
 .NOTPARALLEL:
 
 help:
@@ -9,7 +9,10 @@ help:
 	@echo "  make release-macos    DMG image"
 	@echo "  make release-linux    DEB package and AppImage"
 
-release-prepare:
+release-check:
+	node scripts/check-release-tools.mjs
+
+release-prepare: release-check
 	$(PNPM) install --frozen-lockfile
 	$(PNPM) run check
 	cargo test -p jxl-core --locked
@@ -19,15 +22,18 @@ release-prepare:
 release-windows:
 	node scripts/assert-platform.mjs win32
 	$(MAKE) release-prepare
-	$(PNPM) run desktop:build -- --bundles nsis
+	$(PNPM) run codecs:check
+	$(PNPM) exec tauri build --bundles nsis
 	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1
 
 release-macos:
 	node scripts/assert-platform.mjs darwin
 	$(MAKE) release-prepare
-	$(PNPM) run desktop:build -- --bundles dmg
+	$(PNPM) run codecs:check
+	$(PNPM) exec tauri build --bundles dmg
 
 release-linux:
 	node scripts/assert-platform.mjs linux
 	$(MAKE) release-prepare
-	$(PNPM) run desktop:build -- --bundles deb,appimage
+	$(PNPM) run codecs:check
+	$(PNPM) exec tauri build --bundles deb,appimage

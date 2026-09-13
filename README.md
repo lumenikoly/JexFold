@@ -122,6 +122,12 @@ make release-linux    # DEB and AppImage
 
 Each target installs the locked dependencies, runs the checks, builds the platform codecs, and creates the packages. Outputs are written under `target/release/bundle/`; `target/`, built codecs, and `release-assets/` are ignored by Git.
 
+If the prerequisite check reports that Cargo is missing on Windows, install Rust and restart the terminal before running the build again:
+
+```powershell
+winget install --id Rustlang.Rustup -e
+```
+
 ## Manual release
 
 Releases are intentionally started by hand:

@@ -11,7 +11,7 @@ jobs:
         os: [ubuntu-22.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with:
           version: 11.25.0

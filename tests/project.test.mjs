@@ -35,11 +35,15 @@ test('English and Russian locale catalogs have identical message IDs', () => {
 test('web build is static, scoped for Pages, and uses a verified worker pipeline', () => {
   const vite = read('vite.config.ts');
   const worker = read('src/platform/web/jxl-worker.ts');
+  const webConverter = read('src/platform/web/useWebConverter.ts');
   const workflow = read('.github/workflows/pages.yml');
   const wrapper = read('wasm/src/jexfold_codec.cc');
   assert.match(vite, /VITE_BASE_PATH/);
   assert.match(worker, /equalBytes\(input, reconstructed\)/);
-  assert.match(worker, /postMessage\([^\n]+transfer/);
+  assert.match(worker, /postMessage\([^\n]+, \[bytes\]\)/);
+  assert.match(webConverter, /file\.type\.toLowerCase\(\) === 'image\/jpeg'/);
+  assert.match(webConverter, /`\$\{relative\}\.jxl`/);
+  assert.match(webConverter, /`\$\{relative\.slice\(0, -4\)\}\.jpg`/);
   assert.match(wrapper, /JxlEncoderAddJPEGFrame/);
   assert.match(wrapper, /JxlDecoderSetJPEGBuffer/);
   assert.match(workflow, /actions\/deploy-pages@v5/);

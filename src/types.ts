@@ -12,6 +12,7 @@ export interface ScanResult {
   warningCount: number;
   totalBytes: number;
   mode: ConversionMode;
+  incompatibleCount?: number;
 }
 export interface ToolInfo {
   directory: string;

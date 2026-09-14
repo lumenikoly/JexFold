@@ -325,6 +325,32 @@ export default function App() {
               </button>
             </div>
           </div>
+          {!!app.scan?.incompatibleCount && (
+            <div className="format-warning" role="alert">
+              <div>
+                <strong>{t('source.unsupportedFormatTitle')}</strong>
+                <p>
+                  {t(
+                    options.mode === 'jpegToJxl'
+                      ? 'source.onlyJpegAccepted'
+                      : 'source.onlyJxlAccepted',
+                    { count: app.scan.incompatibleCount },
+                  )}
+                </p>
+              </div>
+              <button
+                className="button"
+                disabled={busy}
+                onClick={() => {
+                  const mode = options.mode === 'jpegToJxl' ? 'jxlToJpeg' : 'jpegToJxl';
+                  app.clear();
+                  setOptions((current) => ({ ...current, mode }));
+                }}
+              >
+                {t('action.switchMode')}
+              </button>
+            </div>
+          )}
           {app.scan && (
             <div className="queue-heading">
               <span>{t('source.filesInQueue')}</span>
@@ -462,7 +488,13 @@ export default function App() {
               ) : (
                 <button
                   className="button primary"
-                  disabled={busy || !app.scan || !app.tools || (app.desktop && !options.outputDir)}
+                  disabled={
+                    busy ||
+                    !app.scan ||
+                    app.scan.files.length === 0 ||
+                    !app.tools ||
+                    (app.desktop && !options.outputDir)
+                  }
                   onClick={() => void app.start(options)}
                 >
                   {t(

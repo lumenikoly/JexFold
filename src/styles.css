@@ -668,6 +668,29 @@ progress::-moz-progress-bar {
   color: #9a6b2f;
   padding: 10px;
 }
+
+.format-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 18px 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.format-warning p {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 600px) {
+  .format-warning {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
 .scan-warnings pre {
   white-space: pre-wrap;
 }

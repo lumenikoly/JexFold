@@ -21,13 +21,17 @@ const emptyMetrics = (): Metrics => ({
   inputBytes: 0,
   outputBytes: 0,
 });
-const accepted = (name: string, mode: ConversionMode) =>
-  mode === 'jpegToJxl' ? /\.(jpe?g)$/i.test(name) : /\.jxl$/i.test(name);
+const accepted = (file: File, mode: ConversionMode) =>
+  mode === 'jpegToJxl'
+    ? /\.(jpe?g)$/i.test(file.name) || file.type.toLowerCase() === 'image/jpeg'
+    : /\.jxl$/i.test(file.name) || file.type.toLowerCase() === 'image/jxl';
 const outputName = (relative: string, mode: ConversionMode) =>
   mode === 'jpegToJxl'
-    ? relative.replace(/\.jpe?g$/i, '.jxl')
+    ? /\.jpe?g$/i.test(relative)
+      ? relative.replace(/\.jpe?g$/i, '.jxl')
+      : `${relative}.jxl`
     : /\.jxl$/i.test(relative)
-      ? relative.slice(0, -4)
+      ? `${relative.slice(0, -4)}.jpg`
       : `${relative}.jpg`;
 
 async function enumerate(handle: FileSystemDirectoryHandle, prefix = ''): Promise<SelectedFile[]> {
@@ -96,7 +100,8 @@ export function useWebConverter() {
     downloads.current.clear();
     setDownloadReady(0);
     try {
-      const usable = entries.filter((entry) => accepted(entry.file.name, mode));
+      const usable = entries.filter((entry) => accepted(entry.file, mode));
+      const incompatibleCount = entries.length - usable.length;
       const files: SourceFile[] = usable.map((entry, id) => ({
         id,
         source: entry.file.name,
@@ -114,6 +119,7 @@ export function useWebConverter() {
         warningCount: 0,
         totalBytes: files.reduce((sum, file) => sum + file.size, 0),
         mode,
+        incompatibleCount,
       });
     } finally {
       setBusy(null);
@@ -153,6 +159,10 @@ export function useWebConverter() {
   const start = useCallback(
     async (options: Options) => {
       if (!scan || busy) return;
+      if (scan.files.length === 0) {
+        setError('No supported files were selected.');
+        return;
+      }
       setBusy('convert');
       setSummary(null);
       setError('');
@@ -164,6 +174,10 @@ export function useWebConverter() {
       setDownloadReady(0);
       cancelled.current = false;
       pausedRef.current = false;
+      // Keep the File objects used by this run independent from later picker/UI
+      // updates. Some mobile browsers clear the live FileList immediately after
+      // the change handler returns.
+      const inputFiles = new Map(selected.current);
       const started = performance.now();
       const concurrency =
         options.performance === 'quiet'
@@ -187,8 +201,29 @@ export function useWebConverter() {
           flush();
           return;
         }
-        const file = selected.current.get(source.id);
-        if (!file) return;
+        const file = inputFiles.get(source.id);
+        if (!file) {
+          results.failed += 1;
+          totals.failed += 1;
+          rows.current.set(source.id, {
+            status: 'failed',
+            result: {
+              id: source.id,
+              source: source.source,
+              output: '',
+              status: 'failed',
+              inputBytes: source.size,
+              outputBytes: null,
+              sha256: null,
+              elapsedMs: 0,
+              message: 'The browser no longer provides access to the selected file.',
+            },
+          });
+          totals.processed += 1;
+          setMetrics({ ...totals });
+          flush();
+          return;
+        }
         try {
           const bytes = await activePool.convert(
             source.id,

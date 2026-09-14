@@ -90,7 +90,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     // Keep the transfer list on the same line: the project smoke test checks
     // that the worker still uses a transferable postMessage payload.
     // prettier-ignore
-    self.postMessage({ type: 'complete', id: request.id, bytes } satisfies WorkerResponse, { transfer: [bytes] });
+    self.postMessage({ type: 'complete', id: request.id, bytes } satisfies WorkerResponse, [bytes]);
   } catch (error) {
     self.postMessage({
       type: 'error',

@@ -5,14 +5,16 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useConverter } from './lib/useConverter';
 import { loadPreferences, savePreferences } from './lib/preferences';
 import { duration, formatBytes, savingPercent } from './lib/format.mjs';
-import { useLanguage, type LanguagePreference } from './i18n';
+import { useLanguage } from './i18n';
+import { FaqModal } from './components/FaqModal';
 import { Icon } from './components/Icon';
+import { LanguageMenu } from './components/LanguageMenu';
 import { Queue } from './components/Queue';
 
 export default function App() {
   const app = useConverter();
   const intl = useIntl();
-  const { locale, preference, setPreference } = useLanguage();
+  const { locale } = useLanguage();
   const t = (id: string, values?: Record<string, string | number>) =>
     intl.formatMessage({ id }, values);
   const [options, setOptions] = useState(loadPreferences);
@@ -177,6 +179,10 @@ export default function App() {
             <span />
           </div>
           <h1>JexFold</h1>
+        </div>
+        <div className="header-actions">
+          <FaqModal />
+          <LanguageMenu />
         </div>
       </header>
       {app.error && (
@@ -400,17 +406,6 @@ export default function App() {
                 <fieldset disabled={busy}>
                   <div className="settings-grid">
                     <label className="inline-field">
-                      <span>{t('settings.language')}</span>
-                      <select
-                        value={preference}
-                        onChange={(e) => setPreference(e.target.value as LanguagePreference)}
-                      >
-                        <option value="system">{t('language.system')}</option>
-                        <option value="en">{t('language.english')}</option>
-                        <option value="ru">{t('language.russian')}</option>
-                      </select>
-                    </label>
-                    <label className="inline-field">
                       <span>{t('settings.performance')}</span>
                       <select
                         value={options.performance}
@@ -432,6 +427,9 @@ export default function App() {
                         <option value="maximum">{t('performance.maximum')}</option>
                       </select>
                     </label>
+                    <div className="inline-privacy">
+                      <p>{t('settings.localOnly')}</p>
+                    </div>
                   </div>
                   <div className="inline-toggles">
                     {app.desktop && (

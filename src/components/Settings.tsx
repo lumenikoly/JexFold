@@ -1,6 +1,5 @@
 import { useIntl } from 'react-intl';
 import type { Options, Performance } from '../types';
-import { useLanguage, type LanguagePreference } from '../i18n';
 import { Icon } from './Icon';
 
 export function Settings({
@@ -23,7 +22,6 @@ export function Settings({
   onClose?: () => void;
 }) {
   const intl = useIntl();
-  const { preference, setPreference } = useLanguage();
   const t = (id: string, values?: Record<string, string | number>) =>
     intl.formatMessage({ id }, values);
   const outputFormat = options.mode === 'jpegToJxl' ? 'JXL' : 'JPEG';
@@ -41,18 +39,6 @@ export function Settings({
           </button>
         )}
       </div>
-      <label className="field-label" htmlFor="language">
-        {t('settings.language')}
-      </label>
-      <select
-        id="language"
-        value={preference}
-        onChange={(e) => setPreference(e.target.value as LanguagePreference)}
-      >
-        <option value="system">{t('language.system')}</option>
-        <option value="en">{t('language.english')}</option>
-        <option value="ru">{t('language.russian')}</option>
-      </select>
       <fieldset disabled={disabled}>
         <label className="field-label field-label-spaced" htmlFor="mode">
           {t('settings.mode')}

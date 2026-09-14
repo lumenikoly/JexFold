@@ -8,7 +8,7 @@ export const defaults: Options = {
   effort: 7,
   performance: 'balanced',
   preserveMetadata: true,
-  skipLarger: true,
+  skipLarger: false,
 };
 
 export function loadPreferences(): Options {
@@ -41,7 +41,7 @@ export function loadPreferences(): Options {
           : typeof raw.preserveMtime === 'boolean'
             ? raw.preserveMtime
             : true,
-      skipLarger: typeof raw.skipLarger === 'boolean' ? raw.skipLarger : true,
+      skipLarger: typeof raw.skipLarger === 'boolean' ? raw.skipLarger : false,
     };
   } catch {
     return { ...defaults };

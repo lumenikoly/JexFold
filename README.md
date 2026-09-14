@@ -2,7 +2,7 @@
 
 **English** · [Русский](README.ru.md)
 
-JexFold is a local application for reversible JPEG-to-JPEG XL recompression. It runs as a desktop app and as a static browser app; the current version is **0.0.2**.
+JexFold is a local application for reversible JPEG-to-JPEG XL recompression. It runs as a desktop app and as a static browser app; the current version is **0.0.3**.
 
 The application uses the official `cjxl` and `djxl` tools, processes everything locally, and verifies every compression by reconstructing the original JPEG and comparing it byte for byte. Originals are never deleted, and existing output files are never overwritten.
 
@@ -40,7 +40,7 @@ Ready-to-use packages are published on the repository's Releases page:
 - macOS 11 or later — disk image (`.dmg`);
 - Debian/Ubuntu — `.deb` package; other Linux distributions — `.AppImage`.
 
-Version 0.0.2 is unsigned. Windows SmartScreen and macOS Gatekeeper may warn about an unknown publisher. Verify downloads against the `SHA256SUMS` file attached to each release.
+Version 0.0.3 is unsigned. Windows SmartScreen and macOS Gatekeeper may warn about an unknown publisher. Verify downloads against the `SHA256SUMS` file attached to each release.
 
 ## Usage
 
@@ -147,7 +147,7 @@ Releases are intentionally started by hand:
 1. Update the version in `package.json`, both Cargo manifests, and `src-tauri/tauri.conf.json`, then add a section to `CHANGELOG.md`.
 2. Make sure the changes are on `main` and CI passes.
 3. Open **Actions → Release → Run workflow**.
-4. Enter the version without the `v` prefix, for example `0.0.2`.
+4. Enter the version without the `v` prefix, for example `0.0.3`.
 5. The workflow checks versions and tags, builds packages on Windows, macOS, and Linux, creates `SHA256SUMS`, tags the commit, and publishes the GitHub Release.
 
 Publication stops if versions disagree, the workflow is not run from `main`, the tag already exists, release notes are empty, or an installer is missing. Windows and macOS packages are currently unsigned.

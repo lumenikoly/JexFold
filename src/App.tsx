@@ -5,20 +5,18 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useConverter } from './lib/useConverter';
 import { loadPreferences, savePreferences } from './lib/preferences';
 import { duration, formatBytes, savingPercent } from './lib/format.mjs';
-import { useLanguage } from './i18n';
+import { useLanguage, type LanguagePreference } from './i18n';
 import { Icon } from './components/Icon';
 import { Queue } from './components/Queue';
-import { Settings } from './components/Settings';
 
 export default function App() {
   const app = useConverter();
   const intl = useIntl();
-  const { locale } = useLanguage();
+  const { locale, preference, setPreference } = useLanguage();
   const t = (id: string, values?: Record<string, string | number>) =>
     intl.formatMessage({ id }, values);
   const [options, setOptions] = useState(loadPreferences);
   const [dragging, setDragging] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const init = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -180,18 +178,6 @@ export default function App() {
           </div>
           <h1>JexFold</h1>
         </div>
-        <div className="header-actions">
-          {!app.desktop && <div className="web-badge">{t('app.webLocal')}</div>}
-          <button
-            className="settings-trigger"
-            aria-label={t('settings.open')}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((value) => !value)}
-          >
-            <Icon name="settings" size={18} />
-            <span>{t('settings.title')}</span>
-          </button>
-        </div>
       </header>
       {app.error && (
         <div className="alert" role="alert">
@@ -212,333 +198,424 @@ export default function App() {
         </div>
       )}
 
-      <section className="page-heading">
-        <div>
-          <span className="eyebrow">
-            {options.mode === 'jpegToJxl' ? 'JPEG → JXL' : 'JXL → JPEG'}
-          </span>
-          <h2>{options.mode === 'jpegToJxl' ? t('page.compressTitle') : t('page.restoreTitle')}</h2>
-          <p>
-            {t(options.mode === 'jpegToJxl' ? 'page.compressSubtitle' : 'page.restoreSubtitle')}
-          </p>
-        </div>
-        {app.scan && (
-          <div className="overview">
+      <div className="app-layout">
+        <main className="main-workspace">
+          <section className="page-heading">
             <div>
-              <strong>{intl.formatNumber(total)}</strong>
-              <span>{t('overview.files')}</span>
-            </div>
-            <div>
-              <strong>{progress}%</strong>
-              <span>{t('overview.progress')}</span>
-              <progress max="100" value={progress} />
-            </div>
-            <div>
-              <strong>{formatBytes(Math.abs(savings), locale)}</strong>
-              <span>{t(savings < 0 ? 'progress.sizeIncreased' : 'progress.saved')}</span>
-            </div>
-          </div>
-        )}
-      </section>
-      <div className="workspace">
-        <main className={`panel source-panel ${app.scan ? 'has-queue' : 'is-empty'}`}>
-          {app.scan && (
-            <div className="panel-title">
               <h2>
-                {t('source.selected')}{' '}
-                <span className="count-chip">{intl.formatNumber(total)}</span>
+                {options.mode === 'jpegToJxl' ? t('page.compressTitle') : t('page.restoreTitle')}
               </h2>
-              <button className="text-button push-right" disabled={busy} onClick={app.clear}>
-                {t('source.clear')}
-              </button>
             </div>
-          )}
-          <div
-            className={`dropzone ${dragging ? 'is-dragging' : ''}`}
-            onDragEnter={(event) => {
-              if (!app.desktop) {
-                event.preventDefault();
-                setDragging(true);
-              }
-            }}
-            onDragOver={(event) => {
-              if (!app.desktop) event.preventDefault();
-            }}
-            onDragLeave={(event) => {
-              if (!app.desktop && event.currentTarget === event.target) setDragging(false);
-            }}
-            onDrop={(event) => {
-              if (!app.desktop) {
-                event.preventDefault();
-                setDragging(false);
-                void app.scanWebFiles?.([...event.dataTransfer.files], options.mode);
-              }
-            }}
-          >
-            <input
-              ref={fileInput}
-              hidden
-              type="file"
-              accept={options.mode === 'jpegToJxl' ? '.jpg,.jpeg,image/jpeg' : '.jxl,image/jxl'}
-              multiple
-              onChange={(event) => {
-                void app.scanWebFiles?.([...(event.target.files ?? [])], options.mode);
-                event.target.value = '';
-              }}
-            />
-            <input
-              ref={folderInput}
-              hidden
-              type="file"
-              accept={options.mode === 'jpegToJxl' ? '.jpg,.jpeg,image/jpeg' : '.jxl,image/jxl'}
-              multiple
-              {...{ webkitdirectory: '' }}
-              onChange={(event) => {
-                void app.scanWebFiles?.([...(event.target.files ?? [])], options.mode);
-                event.target.value = '';
-              }}
-            />
-            <div className="drop-icon">
-              <Icon name="folder" size={29} />
-            </div>
-            <span className="drop-label">
-              {options.mode === 'jpegToJxl' ? 'JPEG → JXL' : 'JXL → JPEG'}
-            </span>
-            <h2>
-              {dragging
-                ? t('source.dropRelease')
-                : app.scan
-                  ? t('source.addMore')
-                  : t('source.emptyTitle')}
-            </h2>
-            <p>{app.scan ? t('source.dropHint') : t('source.emptyHint')}</p>
-            <div className="source-buttons">
+          </section>
+          <section className="mode-bar" aria-label={t('settings.mode')}>
+            <div className="mode-switcher" role="tablist">
               <button
-                className="button primary"
-                disabled={busy}
-                onClick={() => void pickSources(false)}
-              >
-                <Icon name="plus" size={16} /> {t('source.selectFiles')}
-              </button>
-              <button className="button" disabled={busy} onClick={() => void pickSources(true)}>
-                <Icon name="folder" size={16} /> {t('source.selectFolder')}
-              </button>
-            </div>
-          </div>
-          {!!app.scan?.incompatibleCount && (
-            <div className="format-warning" role="alert">
-              <div>
-                <strong>{t('source.unsupportedFormatTitle')}</strong>
-                <p>
-                  {t(
-                    options.mode === 'jpegToJxl'
-                      ? 'source.onlyJpegAccepted'
-                      : 'source.onlyJxlAccepted',
-                    { count: app.scan.incompatibleCount },
-                  )}
-                </p>
-              </div>
-              <button
-                className="button"
+                className={options.mode === 'jpegToJxl' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={options.mode === 'jpegToJxl'}
                 disabled={busy}
                 onClick={() => {
-                  const mode = options.mode === 'jpegToJxl' ? 'jxlToJpeg' : 'jpegToJxl';
-                  app.clear();
-                  setOptions((current) => ({ ...current, mode }));
+                  if (options.mode !== 'jpegToJxl') app.clear();
+                  setOptions((current) => ({ ...current, mode: 'jpegToJxl' }));
                 }}
               >
-                {t('action.switchMode')}
+                JPEG <span>→</span> JXL
+              </button>
+              <button
+                className={options.mode === 'jxlToJpeg' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={options.mode === 'jxlToJpeg'}
+                disabled={busy}
+                onClick={() => {
+                  if (options.mode !== 'jxlToJpeg') app.clear();
+                  setOptions((current) => ({ ...current, mode: 'jxlToJpeg' }));
+                }}
+              >
+                JXL <span>→</span> JPEG
               </button>
             </div>
-          )}
-          {app.scan && (
-            <div className="queue-heading">
-              <span>{t('source.filesInQueue')}</span>
-              <strong>{formatBytes(app.scan.totalBytes, locale)}</strong>
-            </div>
-          )}
-          <Queue
-            scan={app.scan}
-            rows={app.rows}
-            finished={app.summary !== null}
-            mode={options.mode}
-          />
-          {app.scan && app.scan.warningCount > 0 && (
-            <details className="scan-warnings">
-              <summary>{t('source.scanWarnings', { count: app.scan.warningCount })}</summary>
-              <pre>{app.scan.warnings.join('\n')}</pre>
-              {app.scan.warningCount > app.scan.warnings.length && (
-                <p>{t('source.warningsShown', { count: app.scan.warnings.length })}</p>
+          </section>
+          <div className="workspace">
+            <section className={`panel source-panel ${app.scan ? 'has-queue' : 'is-empty'}`}>
+              {app.scan && (
+                <div className="panel-title">
+                  <h2>
+                    {t('source.selected')}{' '}
+                    <span className="count-chip">{intl.formatNumber(total)}</span>
+                  </h2>
+                  <button className="text-button push-right" disabled={busy} onClick={app.clear}>
+                    {t('source.clear')}
+                  </button>
+                </div>
               )}
-            </details>
+              <div
+                className={`dropzone ${dragging ? 'is-dragging' : ''}`}
+                onDragEnter={(event) => {
+                  if (!app.desktop) {
+                    event.preventDefault();
+                    setDragging(true);
+                  }
+                }}
+                onDragOver={(event) => {
+                  if (!app.desktop) event.preventDefault();
+                }}
+                onDragLeave={(event) => {
+                  if (!app.desktop && event.currentTarget === event.target) setDragging(false);
+                }}
+                onDrop={(event) => {
+                  if (!app.desktop) {
+                    event.preventDefault();
+                    setDragging(false);
+                    void app.scanWebFiles?.([...event.dataTransfer.files], options.mode);
+                  }
+                }}
+              >
+                <input
+                  ref={fileInput}
+                  hidden
+                  type="file"
+                  accept={options.mode === 'jpegToJxl' ? '.jpg,.jpeg,image/jpeg' : '.jxl,image/jxl'}
+                  multiple
+                  onChange={(event) => {
+                    void app.scanWebFiles?.([...(event.target.files ?? [])], options.mode);
+                    event.target.value = '';
+                  }}
+                />
+                <input
+                  ref={folderInput}
+                  hidden
+                  type="file"
+                  accept={options.mode === 'jpegToJxl' ? '.jpg,.jpeg,image/jpeg' : '.jxl,image/jxl'}
+                  multiple
+                  {...{ webkitdirectory: '' }}
+                  onChange={(event) => {
+                    void app.scanWebFiles?.([...(event.target.files ?? [])], options.mode);
+                    event.target.value = '';
+                  }}
+                />
+                <div className="drop-icon">
+                  <Icon name="folder" size={29} />
+                </div>
+                <h2>
+                  {dragging
+                    ? t('source.dropRelease')
+                    : app.scan
+                      ? t('source.addMore')
+                      : t('source.emptyTitle')}
+                </h2>
+                <p>{app.scan ? t('source.dropHint') : t('source.emptyHint')}</p>
+                <div className="source-buttons">
+                  <button
+                    className="button primary"
+                    disabled={busy}
+                    onClick={() => void pickSources(false)}
+                  >
+                    <Icon name="plus" size={16} /> {t('source.selectFiles')}
+                  </button>
+                  <button className="button" disabled={busy} onClick={() => void pickSources(true)}>
+                    <Icon name="folder" size={16} /> {t('source.selectFolder')}
+                  </button>
+                </div>
+              </div>
+              <section className="quick-settings" aria-label={t('settings.title')}>
+                <div className={`quick-grid ${options.mode === 'jxlToJpeg' ? 'jxl-to-jpeg' : ''}`}>
+                  {options.mode === 'jpegToJxl' && (
+                    <div className="quick-card compression-quick-card">
+                      <div className="quick-card-top">
+                        <span>{t('settings.compressionEffort')}</span>
+                        <output>
+                          {options.effort} <small>/ 9</small>
+                        </output>
+                      </div>
+                      <div className="range-row">
+                        <span className="range-icon" aria-hidden="true">
+                          ⚡
+                        </span>
+                        <input
+                          aria-label={t('settings.compressionEffort')}
+                          type="range"
+                          min="3"
+                          max="9"
+                          step="1"
+                          value={options.effort}
+                          disabled={busy}
+                          onChange={(e) =>
+                            setOptions({ ...options, effort: Number(e.target.value) })
+                          }
+                        />
+                        <span className="range-icon" aria-hidden="true">
+                          ▣
+                        </span>
+                      </div>
+                      <div className="preset-row">
+                        <button
+                          disabled={busy}
+                          className={options.effort <= 5 ? 'is-active' : ''}
+                          onClick={() => setOptions({ ...options, effort: 4 })}
+                        >
+                          {t('preset.fast')}
+                        </button>
+                        <button
+                          disabled={busy}
+                          className={
+                            options.effort === 6 || options.effort === 7 ? 'is-active' : ''
+                          }
+                          onClick={() => setOptions({ ...options, effort: 7 })}
+                        >
+                          {t('preset.balanced')}
+                        </button>
+                        <button
+                          disabled={busy}
+                          className={options.effort >= 8 ? 'is-active' : ''}
+                          onClick={() => setOptions({ ...options, effort: 9 })}
+                        >
+                          {t('preset.maximum')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    className="quick-card quick-action-card output-quick-card"
+                    onClick={() => void pickOutput()}
+                    disabled={busy || (!app.desktop && !app.capabilities.directDirectoryOutput)}
+                  >
+                    <span className="quick-card-icon">
+                      <Icon name="folder" size={18} />
+                    </span>
+                    <span className="quick-card-copy">
+                      <small>
+                        {t('settings.outputFolder', {
+                          format: options.mode === 'jpegToJxl' ? 'JXL' : 'JPEG',
+                        })}
+                      </small>
+                      <strong>{outputName}</strong>
+                    </span>
+                    {(app.desktop || app.capabilities.directDirectoryOutput) && (
+                      <Icon name="arrow" size={15} />
+                    )}
+                  </button>
+                </div>
+              </section>
+              <section className="inline-settings" aria-label={t('settings.title')}>
+                <fieldset disabled={busy}>
+                  <div className="settings-grid">
+                    <label className="inline-field">
+                      <span>{t('settings.language')}</span>
+                      <select
+                        value={preference}
+                        onChange={(e) => setPreference(e.target.value as LanguagePreference)}
+                      >
+                        <option value="system">{t('language.system')}</option>
+                        <option value="en">{t('language.english')}</option>
+                        <option value="ru">{t('language.russian')}</option>
+                      </select>
+                    </label>
+                    <label className="inline-field">
+                      <span>{t('settings.performance')}</span>
+                      <select
+                        value={options.performance}
+                        onChange={(e) => {
+                          const performance = e.currentTarget.value;
+                          if (
+                            performance === 'quiet' ||
+                            performance === 'balanced' ||
+                            performance === 'fast' ||
+                            performance === 'maximum'
+                          ) {
+                            setOptions((current) => ({ ...current, performance }));
+                          }
+                        }}
+                      >
+                        <option value="quiet">{t('performance.quiet')}</option>
+                        <option value="balanced">{t('performance.balanced')}</option>
+                        <option value="fast">{t('performance.fast')}</option>
+                        <option value="maximum">{t('performance.maximum')}</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="inline-toggles">
+                    {app.desktop && (
+                      <label className="toggle-row">
+                        <input
+                          type="checkbox"
+                          checked={options.preserveMetadata}
+                          onChange={(e) =>
+                            setOptions({ ...options, preserveMetadata: e.target.checked })
+                          }
+                        />
+                        <span>{t('settings.preserveMetadata')}</span>
+                      </label>
+                    )}
+                    {options.mode === 'jpegToJxl' && (
+                      <label className="toggle-row">
+                        <input
+                          type="checkbox"
+                          checked={options.skipLarger}
+                          onChange={(e) => setOptions({ ...options, skipLarger: e.target.checked })}
+                        />
+                        <span>{t('settings.skipLarger')}</span>
+                      </label>
+                    )}
+                  </div>
+                </fieldset>
+              </section>
+              {!!app.scan?.incompatibleCount && (
+                <div className="format-warning" role="alert">
+                  <div>
+                    <strong>{t('source.unsupportedFormatTitle')}</strong>
+                    <p>
+                      {t(
+                        options.mode === 'jpegToJxl'
+                          ? 'source.onlyJpegAccepted'
+                          : 'source.onlyJxlAccepted',
+                        { count: app.scan.incompatibleCount },
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    className="button"
+                    disabled={busy}
+                    onClick={() => {
+                      const mode = options.mode === 'jpegToJxl' ? 'jxlToJpeg' : 'jpegToJxl';
+                      app.clear();
+                      setOptions((current) => ({ ...current, mode }));
+                    }}
+                  >
+                    {t('action.switchMode')}
+                  </button>
+                </div>
+              )}
+              {app.scan && (
+                <div className="queue-heading">
+                  <span>{t('source.filesInQueue')}</span>
+                  <strong>{formatBytes(app.scan.totalBytes, locale)}</strong>
+                </div>
+              )}
+              <Queue
+                scan={app.scan}
+                rows={app.rows}
+                finished={app.summary !== null}
+                mode={options.mode}
+              />
+              {app.scan && app.scan.warningCount > 0 && (
+                <details className="scan-warnings">
+                  <summary>{t('source.scanWarnings', { count: app.scan.warningCount })}</summary>
+                  <pre>{app.scan.warnings.join('\n')}</pre>
+                  {app.scan.warningCount > app.scan.warnings.length && (
+                    <p>{t('source.warningsShown', { count: app.scan.warnings.length })}</p>
+                  )}
+                </details>
+              )}
+            </section>
+          </div>
+
+          {app.scan && (
+            <section className="panel progress-panel" aria-label={t('progress.label')}>
+              <div className="progress-top">
+                <div className="progress-caption">
+                  <span className={`activity-dot ${busy ? 'active' : ''}`} />
+                  <strong aria-live="polite">{stateText}</strong>
+                </div>
+                <span className="progress-numbers">
+                  {intl.formatNumber(app.metrics.processed)} / {intl.formatNumber(total)}
+                </span>
+              </div>
+              <progress max="100" value={progress} aria-label={t('progress.filesComplete')} />
+              <div className="progress-bottom">
+                <div className="metrics">
+                  <div className="stat">
+                    <span>{t('progress.done')}</span>
+                    <strong>{intl.formatNumber(app.metrics.converted)}</strong>
+                  </div>
+                  <div className="stat">
+                    <span>{t('progress.errors')}</span>
+                    <strong className={app.metrics.failed ? 'error-number' : ''}>
+                      {intl.formatNumber(app.metrics.failed)}
+                    </strong>
+                  </div>
+                </div>
+                <div className="stat savings">
+                  <span>
+                    {t(
+                      options.mode === 'jxlToJpeg'
+                        ? 'progress.jpegSize'
+                        : savings < 0
+                          ? 'progress.sizeIncreased'
+                          : 'progress.saved',
+                    )}
+                  </span>
+                  <strong>
+                    {options.mode === 'jxlToJpeg'
+                      ? formatBytes(app.metrics.outputBytes, locale)
+                      : formatBytes(Math.abs(savings), locale)}
+                    {options.mode === 'jpegToJxl' && (
+                      <small>
+                        {intl.formatNumber(
+                          savingPercent(app.metrics.inputBytes, app.metrics.outputBytes) / 100,
+                          { style: 'percent', maximumFractionDigits: 1 },
+                        )}
+                      </small>
+                    )}
+                  </strong>
+                </div>
+                <div className="actions">
+                  {working && (
+                    <button
+                      className="button"
+                      disabled={app.cancelling}
+                      onClick={() => void app.togglePause()}
+                    >
+                      <Icon name="pause" />
+                      {t(app.paused ? 'action.resume' : 'action.pause')}
+                    </button>
+                  )}
+                  {busy && app.busy !== 'probe' ? (
+                    <button
+                      className="button stop"
+                      disabled={app.cancelling}
+                      onClick={() => void app.cancel()}
+                    >
+                      <Icon name="stop" />
+                      {t('action.stop')}
+                    </button>
+                  ) : app.downloadReady > 0 ? (
+                    <button className="button primary" onClick={() => app.downloadAll?.()}>
+                      {t('action.download', { count: app.downloadReady })} <Icon name="arrow" />
+                    </button>
+                  ) : (
+                    <button
+                      className="button primary"
+                      disabled={
+                        busy ||
+                        !app.scan ||
+                        app.scan.files.length === 0 ||
+                        !app.tools ||
+                        (app.desktop && !options.outputDir)
+                      }
+                      onClick={() => void app.start(options)}
+                    >
+                      {t(
+                        options.mode === 'jpegToJxl'
+                          ? 'action.startCompression'
+                          : 'action.restoreJpeg',
+                      )}{' '}
+                      <Icon name="arrow" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {app.summary && (
+                <div className="summary-note" role="status">
+                  {t('summary.finishedIn', { duration: duration(app.summary.elapsedMs, locale) })}
+                  {app.summary.notStarted > 0
+                    ? ` · ${t('summary.notProcessed', { count: app.summary.notStarted })}`
+                    : ''}
+                </div>
+              )}
+            </section>
           )}
         </main>
       </div>
-
-      {!app.scan && !app.summary && (
-        <div className="empty-footnote">
-          <Icon name="shield" size={15} />
-          {t('footer.localOnly')} <span>·</span> {t('settings.lossless')} <span>·</span>{' '}
-          {t('app.offline')}
-        </div>
-      )}
-      {app.scan && (
-        <section className="panel progress-panel" aria-label={t('progress.label')}>
-          <div className="progress-top">
-            <div className="progress-caption">
-              <span className={`activity-dot ${busy ? 'active' : ''}`} />
-              <strong aria-live="polite">{stateText}</strong>
-            </div>
-            <span className="progress-numbers">
-              {intl.formatNumber(app.metrics.processed)} / {intl.formatNumber(total)}
-            </span>
-          </div>
-          <progress max="100" value={progress} aria-label={t('progress.filesComplete')} />
-          <div className="progress-bottom">
-            <button
-              className="output-action"
-              onClick={() => void pickOutput()}
-              disabled={busy || (!app.desktop && !app.capabilities.directDirectoryOutput)}
-            >
-              <Icon name="folder" />
-              <span>
-                <small>
-                  {t('settings.outputFolder', {
-                    format: options.mode === 'jpegToJxl' ? 'JXL' : 'JPEG',
-                  })}
-                </small>
-                <strong>{outputName}</strong>
-              </span>
-            </button>
-            <div className="verify-action">
-              <Icon name="shield" />
-              <span>
-                <strong>
-                  {t(options.mode === 'jpegToJxl' ? 'settings.lossless' : 'settings.decodeToJpeg')}
-                </strong>
-                <small>
-                  {t(
-                    options.mode === 'jpegToJxl'
-                      ? 'settings.verifyAfterCompression'
-                      : 'settings.restoreOriginal',
-                  )}
-                </small>
-              </span>
-            </div>
-            <div className="metrics">
-              <div className="stat">
-                <span>{t('progress.done')}</span>
-                <strong>{intl.formatNumber(app.metrics.converted)}</strong>
-              </div>
-              <div className="stat">
-                <span>{t('progress.errors')}</span>
-                <strong className={app.metrics.failed ? 'error-number' : ''}>
-                  {intl.formatNumber(app.metrics.failed)}
-                </strong>
-              </div>
-            </div>
-            <div className="stat savings">
-              <span>
-                {t(
-                  options.mode === 'jxlToJpeg'
-                    ? 'progress.jpegSize'
-                    : savings < 0
-                      ? 'progress.sizeIncreased'
-                      : 'progress.saved',
-                )}
-              </span>
-              <strong>
-                {options.mode === 'jxlToJpeg'
-                  ? formatBytes(app.metrics.outputBytes, locale)
-                  : formatBytes(Math.abs(savings), locale)}
-                {options.mode === 'jpegToJxl' && (
-                  <small>
-                    {intl.formatNumber(
-                      savingPercent(app.metrics.inputBytes, app.metrics.outputBytes) / 100,
-                      { style: 'percent', maximumFractionDigits: 1 },
-                    )}
-                  </small>
-                )}
-              </strong>
-            </div>
-            <div className="actions">
-              {working && (
-                <button
-                  className="button"
-                  disabled={app.cancelling}
-                  onClick={() => void app.togglePause()}
-                >
-                  <Icon name="pause" />
-                  {t(app.paused ? 'action.resume' : 'action.pause')}
-                </button>
-              )}
-              {busy && app.busy !== 'probe' ? (
-                <button
-                  className="button stop"
-                  disabled={app.cancelling}
-                  onClick={() => void app.cancel()}
-                >
-                  <Icon name="stop" />
-                  {t('action.stop')}
-                </button>
-              ) : app.downloadReady > 0 ? (
-                <button className="button primary" onClick={() => app.downloadAll?.()}>
-                  {t('action.download', { count: app.downloadReady })} <Icon name="arrow" />
-                </button>
-              ) : (
-                <button
-                  className="button primary"
-                  disabled={
-                    busy ||
-                    !app.scan ||
-                    app.scan.files.length === 0 ||
-                    !app.tools ||
-                    (app.desktop && !options.outputDir)
-                  }
-                  onClick={() => void app.start(options)}
-                >
-                  {t(
-                    options.mode === 'jpegToJxl' ? 'action.startCompression' : 'action.restoreJpeg',
-                  )}{' '}
-                  <Icon name="arrow" />
-                </button>
-              )}
-            </div>
-          </div>
-          {app.summary && (
-            <div className="summary-note" role="status">
-              {t('summary.finishedIn', { duration: duration(app.summary.elapsedMs, locale) })}
-              {app.summary.notStarted > 0
-                ? ` · ${t('summary.notProcessed', { count: app.summary.notStarted })}`
-                : ''}
-            </div>
-          )}
-        </section>
-      )}
-      {settingsOpen && (
-        <>
-          <button
-            className="drawer-backdrop"
-            aria-label={t('common.close')}
-            onClick={() => setSettingsOpen(false)}
-          />
-          <div className="settings-drawer">
-            <Settings
-              options={options}
-              setOptions={(next) => {
-                if (next.mode !== options.mode) app.clear();
-                setOptions(next);
-              }}
-              disabled={busy}
-              chooseOutput={() => void pickOutput()}
-              desktop={app.desktop}
-              directOutput={app.capabilities.directDirectoryOutput}
-              outputLabel={app.outputLabel}
-              onClose={() => setSettingsOpen(false)}
-            />
-          </div>
-        </>
-      )}
       <footer className="app-footer">
         {app.desktop && !app.tools && (
           <>
@@ -548,7 +625,6 @@ export default function App() {
             </button>
           </>
         )}
-        <span className="footer-local">{t('footer.localOnly')}</span>
         <a
           className="footer-credit"
           href="https://nkoksharov.dev/"

@@ -1,5 +1,5 @@
 
-> jexfold@0.0.2 test
+> jexfold@0.0.3 test
 > node --test tests/format.test.mjs tests/project.test.mjs
 
 TAP version 13

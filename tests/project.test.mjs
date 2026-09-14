@@ -46,6 +46,9 @@ test('web build is static, scoped for Pages, and uses a verified worker pipeline
   assert.match(webConverter, /`\$\{relative\.slice\(0, -4\)\}\.jpg`/);
   assert.match(wrapper, /JxlEncoderAddJPEGFrame/);
   assert.match(wrapper, /JxlDecoderSetJPEGBuffer/);
+  assert.match(wrapper, /JXL_DEC_NEED_IMAGE_OUT_BUFFER/);
+  assert.match(wrapper, /JxlDecoderSetImageOutBuffer/);
+  assert.match(worker, /OffscreenCanvas/);
   assert.match(workflow, /actions\/deploy-pages@v5/);
   assert.match(workflow, /pnpm run wasm:build/);
 });

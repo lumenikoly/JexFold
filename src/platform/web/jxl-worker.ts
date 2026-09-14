@@ -7,9 +7,12 @@ type CodecModule = {
   _free(pointer: number): void;
   _jexfold_encode_jpeg(pointer: number, size: number, effort: number): number;
   _jexfold_reconstruct_jpeg(pointer: number, size: number): number;
+  _jexfold_decode_rgba(pointer: number, size: number): number;
   _jexfold_result_data(): number;
   _jexfold_result_size(): number;
   _jexfold_result_error(): number;
+  _jexfold_result_width(): number;
+  _jexfold_result_height(): number;
 };
 
 type CodecFactory = (options: { locateFile: (name: string) => string }) => CodecModule;
@@ -51,6 +54,24 @@ function equalBytes(left: Uint8Array, right: Uint8Array) {
   return true;
 }
 
+async function decodePixelsToJpeg(module: CodecModule, input: Uint8Array) {
+  const pixels = invoke(module, input, (pointer) =>
+    module._jexfold_decode_rgba(pointer, input.byteLength),
+  );
+  const width = module._jexfold_result_width();
+  const height = module._jexfold_result_height();
+  if (!width || !height || pixels.byteLength !== width * height * 4)
+    throw new Error('JPEG XL codec returned invalid image dimensions.');
+  if (typeof OffscreenCanvas === 'undefined')
+    throw new Error('This browser cannot create a JPEG from decoded pixels.');
+  const canvas = new OffscreenCanvas(width, height);
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('This browser cannot create a JPEG canvas.');
+  context.putImageData(new ImageData(new Uint8ClampedArray(pixels), width, height), 0, 0);
+  const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const request = event.data;
   try {
@@ -82,9 +103,13 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         id: request.id,
         stage: 'decoding',
       } satisfies WorkerResponse);
-      output = invoke(module, input, (pointer) =>
-        module._jexfold_reconstruct_jpeg(pointer, input.byteLength),
-      );
+      try {
+        output = invoke(module, input, (pointer) =>
+          module._jexfold_reconstruct_jpeg(pointer, input.byteLength),
+        );
+      } catch {
+        output = await decodePixelsToJpeg(module, input);
+      }
     }
     const bytes = output.buffer as ArrayBuffer;
     // Keep the transfer list on the same line: the project smoke test checks

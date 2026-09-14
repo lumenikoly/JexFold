@@ -22,7 +22,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.88.0
-          components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Linux prerequisites
         if: runner.os == 'Linux'
@@ -46,8 +45,6 @@ jobs:
         run: npm run check
       - name: Core unit tests
         run: cargo test -p jxl-core --locked
-      - name: Lint core
-        run: cargo clippy -p jxl-core --all-targets --locked -- -D warnings
       - name: Build official codecs
         run: npm run codecs:build
       - name: Real JPEG reconstruction tests

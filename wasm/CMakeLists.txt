@@ -45,7 +45,7 @@ target_link_options(jexfold_codec PRIVATE
   "-sALLOW_MEMORY_GROWTH=1"
   "-sINITIAL_MEMORY=67108864"
   "-sMAXIMUM_MEMORY=2147483648"
-  "-sEXPORTED_FUNCTIONS=['_malloc','_free','_jexfold_encode_jpeg','_jexfold_reconstruct_jpeg','_jexfold_result_data','_jexfold_result_size','_jexfold_result_error']"
+  "-sEXPORTED_FUNCTIONS=['_malloc','_free','_jexfold_encode_jpeg','_jexfold_reconstruct_jpeg','_jexfold_decode_rgba','_jexfold_result_data','_jexfold_result_size','_jexfold_result_error','_jexfold_result_width','_jexfold_result_height']"
   "-sEXPORTED_RUNTIME_METHODS=['HEAPU8']"
 )
 set_target_properties(jexfold_codec PROPERTIES SUFFIX ".js")

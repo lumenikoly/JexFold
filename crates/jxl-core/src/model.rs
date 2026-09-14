@@ -42,9 +42,9 @@ pub enum ConversionMode {
 #[serde(rename_all = "camelCase")]
 pub enum Performance {
     Quiet,
-    #[default]
     Balanced,
     Fast,
+    #[default]
     Maximum,
 }
 

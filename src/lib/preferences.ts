@@ -6,7 +6,7 @@ export const defaults: Options = {
   mode: 'jpegToJxl',
   outputDir: '',
   effort: 7,
-  performance: 'balanced',
+  performance: 'maximum',
   preserveMetadata: true,
   skipLarger: false,
 };
@@ -34,7 +34,7 @@ export function loadPreferences(): Options {
         raw.performance === 'fast' ||
         raw.performance === 'maximum'
           ? raw.performance
-          : 'balanced',
+          : 'maximum',
       preserveMetadata:
         typeof raw.preserveMetadata === 'boolean'
           ? raw.preserveMetadata

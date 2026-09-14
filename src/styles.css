@@ -89,6 +89,9 @@ fieldset {
 }
 .app-shell {
   width: min(1380px, 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   margin: 0 auto;
   padding: 0 42px 22px;
 }
@@ -160,6 +163,7 @@ fieldset {
   box-shadow: 0 0 0 4px rgba(255, 226, 141, 0.1);
 }
 .app-layout {
+  flex: 1;
   display: block;
 }
 .side-rail {
@@ -1041,6 +1045,12 @@ progress::-moz-progress-bar {
   font-size: 10px;
   margin-top: 21px;
 }
+.footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
 .footer-local {
   margin-left: auto;
 }
@@ -1290,6 +1300,9 @@ progress::-moz-progress-bar {
     padding: 14px;
   }
   .footer-local {
+    margin-left: 0;
+  }
+  .footer-meta {
     margin-left: 0;
   }
   .app-footer {

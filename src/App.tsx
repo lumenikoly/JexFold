@@ -625,14 +625,17 @@ export default function App() {
             </button>
           </>
         )}
-        <a
-          className="footer-credit"
-          href="https://nkoksharov.dev/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Created by nkoksharov.dev
-        </a>
+        <div className="footer-meta">
+          <a
+            className="footer-credit"
+            href="https://nkoksharov.dev/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Created by nkoksharov.dev
+          </a>
+          <span>version 0.0.3</span>
+        </div>
       </footer>
     </div>
   );

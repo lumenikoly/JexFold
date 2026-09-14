@@ -32,6 +32,25 @@ test('English and Russian locale catalogs have identical message IDs', () => {
   const ru = JSON.parse(read('src/i18n/locales/ru.json'));
   assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort());
 });
+test('space-saving filter is disabled by default', () => {
+  const preferences = read('src/lib/preferences.ts');
+  assert.match(preferences, /skipLarger: false/);
+});
+test('maximum computer usage is the default performance mode', () => {
+  const preferences = read('src/lib/preferences.ts');
+  const model = read('crates/jxl-core/src/model.rs');
+  assert.match(preferences, /performance: 'maximum'/);
+  assert.match(preferences, /: 'maximum',/);
+  assert.match(model, /\#\[default\]\s+Maximum,/);
+});
+test('footer stays at the bottom and shows the app version', () => {
+  const app = read('src/App.tsx');
+  const styles = read('src/styles.css');
+  assert.match(app, /Created by nkoksharov\.dev/);
+  assert.match(app, /version 0\.0\.3/);
+  assert.match(styles, /\.app-shell \{[\s\S]*?min-height: 100vh;/);
+  assert.match(styles, /\.app-layout \{[\s\S]*?flex: 1;/);
+});
 test('web build is static, scoped for Pages, and uses a verified worker pipeline', () => {
   const vite = read('vite.config.ts');
   const worker = read('src/platform/web/jxl-worker.ts');

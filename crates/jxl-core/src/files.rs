@@ -1,9 +1,17 @@
-use sha2::{Digest, Sha256};
-use std::{fs::{self, File}, io::{Read, Write}, path::{Component, Path, PathBuf}};
 use crate::{Control, ConversionMode, Error, Result, SourceFile};
+use sha2::{Digest, Sha256};
+use std::{
+    fs::{self, File},
+    io::{Read, Write},
+    path::{Component, Path, PathBuf},
+};
 
 pub(crate) fn output_relative(relative: &Path, mode: ConversionMode) -> Result<PathBuf> {
-    if relative.as_os_str().is_empty() || relative.components().any(|c| !matches!(c, Component::Normal(_))) {
+    if relative.as_os_str().is_empty()
+        || relative
+            .components()
+            .any(|c| !matches!(c, Component::Normal(_)))
+    {
         return Err(Error::Invalid("Небезопасный относительный путь".into()));
     }
     match mode {
@@ -15,7 +23,13 @@ pub(crate) fn output_relative(relative: &Path, mode: ConversionMode) -> Result<P
         ConversionMode::JxlToJpeg => {
             let mut result = relative.to_path_buf();
             result.set_extension("");
-            if !result.extension().and_then(|s| s.to_str()).is_some_and(|s| s.eq_ignore_ascii_case("jpg") || s.eq_ignore_ascii_case("jpeg")) { result.set_extension("jpg"); }
+            if !result
+                .extension()
+                .and_then(|s| s.to_str())
+                .is_some_and(|s| s.eq_ignore_ascii_case("jpg") || s.eq_ignore_ascii_case("jpeg"))
+            {
+                result.set_extension("jpg");
+            }
             Ok(result)
         }
     }
@@ -26,21 +40,30 @@ pub(crate) fn output_relative(relative: &Path, mode: ConversionMode) -> Result<P
 /// not concurrently mutated by an adversarial process (see SECURITY.md).
 pub(crate) fn safe_parent(root: &Path, relative: &Path) -> Result<PathBuf> {
     let mut current = root.to_path_buf();
-    let parent = relative.parent().ok_or_else(|| Error::Invalid("Нет родительской папки".into()))?;
+    let parent = relative
+        .parent()
+        .ok_or_else(|| Error::Invalid("Нет родительской папки".into()))?;
     for part in parent.components() {
-        let Component::Normal(name) = part else { return Err(Error::Invalid("Небезопасный путь".into())); };
+        let Component::Normal(name) = part else {
+            return Err(Error::Invalid("Небезопасный путь".into()));
+        };
         current.push(name);
         match fs::create_dir(&current) {
-            Ok(()) => {},
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {},
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
             Err(e) => return Err(e.into()),
         }
         let meta = fs::symlink_metadata(&current)?;
         if meta.file_type().is_symlink() || !meta.is_dir() {
-            return Err(Error::Invalid(format!("Папка назначения является ссылкой или не каталогом: {}", current.display())));
+            return Err(Error::Invalid(format!(
+                "Папка назначения является ссылкой или не каталогом: {}",
+                current.display()
+            )));
         }
         if !fs::canonicalize(&current)?.starts_with(root) {
-            return Err(Error::Invalid("Папка назначения вышла за выбранный корень".into()));
+            return Err(Error::Invalid(
+                "Папка назначения вышла за выбранный корень".into(),
+            ));
         }
     }
     Ok(current)
@@ -48,7 +71,11 @@ pub(crate) fn safe_parent(root: &Path, relative: &Path) -> Result<PathBuf> {
 
 pub(crate) fn ensure_stamp(source: &SourceFile) -> Result<()> {
     let meta = fs::symlink_metadata(&source.source)?;
-    if !meta.is_file() || meta.file_type().is_symlink() || meta.len() != source.size || meta.modified().ok() != source.modified {
+    if !meta.is_file()
+        || meta.file_type().is_symlink()
+        || meta.len() != source.size
+        || meta.modified().ok() != source.modified
+    {
         return Err(Error::SourceChanged);
     }
     Ok(())
@@ -58,50 +85,103 @@ pub(crate) fn ensure_stamp(source: &SourceFile) -> Result<()> {
 /// Embedded JPEG metadata is preserved by libjxl's exact reconstruction stream.
 pub(crate) fn preserve_metadata(source: &SourceFile, destination: &Path) -> Result<()> {
     if let (Some(accessed), Some(modified)) = (source.accessed, source.modified) {
-        filetime::set_file_times(destination, filetime::FileTime::from_system_time(accessed), filetime::FileTime::from_system_time(modified))?;
+        filetime::set_file_times(
+            destination,
+            filetime::FileTime::from_system_time(accessed),
+            filetime::FileTime::from_system_time(modified),
+        )?;
     } else if let Some(modified) = source.modified {
         filetime::set_file_mtime(destination, filetime::FileTime::from_system_time(modified))?;
     }
     #[cfg(windows)]
-    if let Some(created) = source.created { set_windows_creation_time(destination, created)?; }
+    if let Some(created) = source.created {
+        set_windows_creation_time(destination, created)?;
+    }
     #[cfg(unix)]
-    if let Some(permissions) = &source.permissions { fs::set_permissions(destination, permissions.clone())?; }
+    if let Some(permissions) = &source.permissions {
+        fs::set_permissions(destination, permissions.clone())?;
+    }
     Ok(())
 }
 
 pub(crate) fn sync_stage(stage: &Path) -> Result<()> {
-    File::options().read(true).write(true).open(stage)?.sync_all()?;
+    File::options()
+        .read(true)
+        .write(true)
+        .open(stage)?
+        .sync_all()?;
     Ok(())
 }
 
 #[cfg(windows)]
 fn set_windows_creation_time(path: &Path, created: std::time::SystemTime) -> std::io::Result<()> {
-    use std::{os::windows::{fs::OpenOptionsExt, io::AsRawHandle}, time::UNIX_EPOCH};
-    use windows_sys::Win32::{Foundation::FILETIME, Storage::FileSystem::{FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_WRITE_ATTRIBUTES, SetFileTime}};
+    use std::{
+        os::windows::{fs::OpenOptionsExt, io::AsRawHandle},
+        time::UNIX_EPOCH,
+    };
+    use windows_sys::Win32::{
+        Foundation::FILETIME,
+        Storage::FileSystem::{
+            SetFileTime, FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
+            FILE_WRITE_ATTRIBUTES,
+        },
+    };
     const WINDOWS_TO_UNIX_100NS: u64 = 116_444_736_000_000_000;
-    let since_unix = created.duration_since(UNIX_EPOCH).map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "Дата создания находится до эпохи Unix"))?;
-    let ticks = WINDOWS_TO_UNIX_100NS.checked_add(since_unix.as_secs().saturating_mul(10_000_000))
+    let since_unix = created.duration_since(UNIX_EPOCH).map_err(|_| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Дата создания находится до эпохи Unix",
+        )
+    })?;
+    let ticks = WINDOWS_TO_UNIX_100NS
+        .checked_add(since_unix.as_secs().saturating_mul(10_000_000))
         .and_then(|value| value.checked_add(u64::from(since_unix.subsec_nanos()) / 100))
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "Дата создания вне диапазона Windows"))?;
-    let creation = FILETIME { dwLowDateTime: ticks as u32, dwHighDateTime: (ticks >> 32) as u32 };
-    let file = File::options().access_mode(FILE_WRITE_ATTRIBUTES)
-        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE).open(path)?;
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Дата создания вне диапазона Windows",
+            )
+        })?;
+    let creation = FILETIME {
+        dwLowDateTime: ticks as u32,
+        dwHighDateTime: (ticks >> 32) as u32,
+    };
+    let file = File::options()
+        .access_mode(FILE_WRITE_ATTRIBUTES)
+        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+        .open(path)?;
     // SAFETY: the handle belongs to the live `file`; the pointer is valid for
     // this call, while null pointers request no change to the other timestamps.
-    let succeeded = unsafe { SetFileTime(file.as_raw_handle(), &creation, std::ptr::null(), std::ptr::null()) };
-    if succeeded == 0 { Err(std::io::Error::last_os_error()) } else { Ok(()) }
+    let succeeded = unsafe {
+        SetFileTime(
+            file.as_raw_handle(),
+            &creation,
+            std::ptr::null(),
+            std::ptr::null(),
+        )
+    };
+    if succeeded == 0 {
+        Err(std::io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
 }
 
 /// Streaming snapshot and SHA-256. Memory is independent of input file size.
 pub(crate) fn snapshot(source: &Path, destination: &Path, control: &Control) -> Result<String> {
     let mut input = File::open(source)?;
-    let mut output = File::options().create_new(true).write(true).open(destination)?;
+    let mut output = File::options()
+        .create_new(true)
+        .write(true)
+        .open(destination)?;
     let mut hash = Sha256::new();
     let mut buffer = vec![0_u8; 256 * 1024];
     loop {
         control.check()?;
         let len = input.read(&mut buffer)?;
-        if len == 0 { break; }
+        if len == 0 {
+            break;
+        }
         output.write_all(&buffer[..len])?;
         hash.update(&buffer[..len]);
     }
@@ -113,7 +193,9 @@ pub(crate) fn equal_files(a: &Path, b: &Path, control: &Control) -> Result<bool>
     let mut a = File::open(a)?;
     let mut b = File::open(b)?;
     let len = a.metadata()?.len();
-    if len != b.metadata()?.len() { return Ok(false); }
+    if len != b.metadata()?.len() {
+        return Ok(false);
+    }
     let mut left = vec![0_u8; 256 * 1024];
     let mut right = vec![0_u8; 256 * 1024];
     let mut remaining = len;
@@ -122,7 +204,9 @@ pub(crate) fn equal_files(a: &Path, b: &Path, control: &Control) -> Result<bool>
         let count = remaining.min(left.len() as u64) as usize;
         a.read_exact(&mut left[..count])?;
         b.read_exact(&mut right[..count])?;
-        if left[..count] != right[..count] { return Ok(false); }
+        if left[..count] != right[..count] {
+            return Ok(false);
+        }
         remaining -= count as u64;
     }
     // Catch a concurrent append as well as initial length mismatches.
@@ -139,7 +223,9 @@ pub(crate) fn publish(stage: &Path, target: &Path) -> Result<Option<String>> {
     #[cfg(unix)]
     if let Some(parent) = target.parent() {
         if let Err(e) = File::open(parent).and_then(|f| f.sync_all()) {
-            return Ok(Some(format!("Файл создан, но синхронизация каталога не подтверждена: {e}")));
+            return Ok(Some(format!(
+                "Файл создан, но синхронизация каталога не подтверждена: {e}"
+            )));
         }
     }
     Ok(None)
@@ -150,10 +236,22 @@ mod tests {
     use super::*;
     #[test]
     fn replaces_jpeg_extension() {
-        assert_eq!(output_relative(Path::new("folder/a.jpg"), ConversionMode::JpegToJxl).unwrap(), PathBuf::from("folder/a.jxl"));
-        assert_eq!(output_relative(Path::new("folder/a.JPEG"), ConversionMode::JpegToJxl).unwrap(), PathBuf::from("folder/a.jxl"));
-        assert_eq!(output_relative(Path::new("folder/a.jpg.jxl"), ConversionMode::JxlToJpeg).unwrap(), PathBuf::from("folder/a.jpg"));
-        assert_eq!(output_relative(Path::new("folder/a.jxl"), ConversionMode::JxlToJpeg).unwrap(), PathBuf::from("folder/a.jpg"));
+        assert_eq!(
+            output_relative(Path::new("folder/a.jpg"), ConversionMode::JpegToJxl).unwrap(),
+            PathBuf::from("folder/a.jxl")
+        );
+        assert_eq!(
+            output_relative(Path::new("folder/a.JPEG"), ConversionMode::JpegToJxl).unwrap(),
+            PathBuf::from("folder/a.jxl")
+        );
+        assert_eq!(
+            output_relative(Path::new("folder/a.jpg.jxl"), ConversionMode::JxlToJpeg).unwrap(),
+            PathBuf::from("folder/a.jpg")
+        );
+        assert_eq!(
+            output_relative(Path::new("folder/a.jxl"), ConversionMode::JxlToJpeg).unwrap(),
+            PathBuf::from("folder/a.jpg")
+        );
     }
     #[test]
     fn rejects_path_traversal() {
@@ -164,16 +262,20 @@ mod tests {
     #[test]
     fn publication_never_overwrites() {
         let temp = tempfile::tempdir().unwrap();
-        let stage = temp.path().join("stage"); let dest = temp.path().join("out");
-        fs::write(&stage, b"new").unwrap(); fs::write(&dest, b"old").unwrap();
+        let stage = temp.path().join("stage");
+        let dest = temp.path().join("out");
+        fs::write(&stage, b"new").unwrap();
+        fs::write(&dest, b"old").unwrap();
         assert!(publish(&stage, &dest).is_err());
         assert_eq!(fs::read(&dest).unwrap(), b"old");
     }
     #[test]
     fn comparison_checks_every_byte_and_length() {
         let temp = tempfile::tempdir().unwrap();
-        let a = temp.path().join("a"); let b = temp.path().join("b");
-        fs::write(&a, vec![7; 600_000]).unwrap(); fs::copy(&a, &b).unwrap();
+        let a = temp.path().join("a");
+        let b = temp.path().join("b");
+        fs::write(&a, vec![7; 600_000]).unwrap();
+        fs::copy(&a, &b).unwrap();
         assert!(equal_files(&a, &b, &Control::default()).unwrap());
         fs::write(&b, vec![8; 600_000]).unwrap();
         assert!(!equal_files(&a, &b, &Control::default()).unwrap());
@@ -194,9 +296,16 @@ mod tests {
         let path = dir.path().join("photo.jpg");
         fs::write(&path, b"original").unwrap();
         let m = fs::metadata(&path).unwrap();
-        let source = SourceFile { id: 0, source: path.clone(), relative: "photo.jpg".into(),
-            size: m.len(), modified: m.modified().ok(), accessed: m.accessed().ok(),
-            created: m.created().ok(), permissions: Some(m.permissions()) };
+        let source = SourceFile {
+            id: 0,
+            source: path.clone(),
+            relative: "photo.jpg".into(),
+            size: m.len(),
+            modified: m.modified().ok(),
+            accessed: m.accessed().ok(),
+            created: m.created().ok(),
+            permissions: Some(m.permissions()),
+        };
         fs::write(&path, b"changed length").unwrap();
         assert!(matches!(ensure_stamp(&source), Err(Error::SourceChanged)));
     }
@@ -228,5 +337,4 @@ mod tests {
         #[cfg(windows)]
         assert_eq!(result.created().ok(), source.created);
     }
-
 }

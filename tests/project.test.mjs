@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const read = path => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+const read = (path) => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 test('desktop config has a local CSP and bundled tools', () => {
   const config = JSON.parse(read('src-tauri/tauri.conf.json'));
   assert.equal(config.build.frontendDist, '../dist');

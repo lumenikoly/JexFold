@@ -98,6 +98,18 @@ sudo apt-get install -y build-essential git cmake pkg-config \
 
 ## Проверки и сборка
 
+Команды линтинга и форматирования хранятся в репозитории, поэтому локальные проверки совпадают с CI:
+
+```bash
+pnpm run lint:web
+pnpm run typecheck
+pnpm run format:check
+pnpm run lint:rust
+pnpm run format:cpp:check
+```
+
+`pnpm run lint` дополнительно запускает Clippy, clang-tidy, ShellCheck и actionlint. Для нативных команд нужны соответствующие инструменты; `lint:cpp` ожидает зафиксированный checkout libjxl после `pnpm run codecs:build`.
+
 ```bash
 pnpm run check
 pnpm run wasm:build

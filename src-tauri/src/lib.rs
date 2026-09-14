@@ -2,16 +2,19 @@
 mod commands;
 mod session;
 
-use tauri::{Emitter, Manager};
 use session::AppState;
+use tauri::{Emitter, Manager};
 
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
-            commands::scan_sources, commands::probe_tools, commands::convert,
-            commands::cancel, commands::set_paused,
+            commands::scan_sources,
+            commands::probe_tools,
+            commands::convert,
+            commands::cancel,
+            commands::set_paused,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

@@ -7,8 +7,16 @@ import './styles.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing application root');
-ReactDOM.createRoot(root).render(<React.StrictMode><AppIntlProvider><App /></AppIntlProvider></React.StrictMode>);
+ReactDOM.createRoot(root).render(
+  <React.StrictMode>
+    <AppIntlProvider>
+      <App />
+    </AppIntlProvider>
+  </React.StrictMode>,
+);
 
 if (!isTauri() && import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => { void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`); });
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
+  });
 }

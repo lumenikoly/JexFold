@@ -3,4 +3,7 @@ try {
   run('cargo', ['test', '-p', 'jxl-core', '--test', 'roundtrip', '--', '--ignored'], {
     env: { ...process.env, JXL_TOOLS_DIR: codecsDir },
   });
-} catch (error) { console.error(error); process.exitCode = 1; }
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+}

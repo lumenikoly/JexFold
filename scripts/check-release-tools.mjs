@@ -8,7 +8,10 @@ const tools = [
 ];
 
 const missing = tools.filter(({ command }) => {
-  const result = spawnSync(resolveCommand(command), ['--version'], { stdio: 'ignore', shell: false });
+  const result = spawnSync(resolveCommand(command), ['--version'], {
+    stdio: 'ignore',
+    shell: false,
+  });
   return result.error || result.status !== 0;
 });
 

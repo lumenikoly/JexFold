@@ -1,5 +1,8 @@
-use std::sync::{atomic::{AtomicBool, Ordering}, Condvar, Mutex};
 use crate::{Error, Result};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Condvar, Mutex,
+};
 
 /// Pause stops dispatching NEW files. Active codecs are allowed to finish.
 /// Cancel also terminates active child processes at their next poll.
@@ -26,7 +29,11 @@ impl Control {
     }
 
     pub fn check(&self) -> Result<()> {
-        if self.is_cancelled() { Err(Error::Cancelled) } else { Ok(()) }
+        if self.is_cancelled() {
+            Err(Error::Cancelled)
+        } else {
+            Ok(())
+        }
     }
 
     pub fn set_paused(&self, value: bool) {

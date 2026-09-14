@@ -2,12 +2,28 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { ConversionMode, Metrics, Options, Progress, RowState, ScanResult, Summary, ToolInfo } from '../types';
+import type {
+  ConversionMode,
+  Metrics,
+  Options,
+  Progress,
+  RowState,
+  ScanResult,
+  Summary,
+  ToolInfo,
+} from '../types';
 import { desktopCapabilities } from '../platform/backend';
 import { useWebConverter } from '../platform/web/useWebConverter';
 
-const emptyMetrics = (): Metrics => ({ processed: 0, converted: 0, failed: 0, skipped: 0, inputBytes: 0, outputBytes: 0 });
-const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
+const emptyMetrics = (): Metrics => ({
+  processed: 0,
+  converted: 0,
+  failed: 0,
+  skipped: 0,
+  inputBytes: 0,
+  outputBytes: 0,
+});
+const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 function useTauriConverter() {
   const intl = useIntl();
@@ -30,8 +46,14 @@ function useTauriConverter() {
   const desktop = isTauri();
 
   const flush = useCallback(() => {
-    if (timer.current !== null) { clearTimeout(timer.current); timer.current = null; }
-    if (alive.current) { setMetrics({ ...liveMetrics.current }); setRevision(n => n + 1); }
+    if (timer.current !== null) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (alive.current) {
+      setMetrics({ ...liveMetrics.current });
+      setRevision((n) => n + 1);
+    }
   }, []);
   const scheduleFlush = useCallback(() => {
     if (timer.current === null) timer.current = setTimeout(flush, 80);
@@ -39,7 +61,10 @@ function useTauriConverter() {
 
   useEffect(() => {
     alive.current = true;
-    return () => { alive.current = false; if (timer.current !== null) clearTimeout(timer.current); };
+    return () => {
+      alive.current = false;
+      if (timer.current !== null) clearTimeout(timer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -48,83 +73,143 @@ function useTauriConverter() {
     let cleanup: (() => void) | undefined;
     void listen('operation-active', () => {
       setError(intl.formatMessage({ id: 'error.operationActive' }));
-    }).then(fn => { if (disposed) fn(); else cleanup = fn; }).catch(e => setError(errorText(e)));
-    return () => { disposed = true; cleanup?.(); };
+    })
+      .then((fn) => {
+        if (disposed) fn();
+        else cleanup = fn;
+      })
+      .catch((e) => setError(errorText(e)));
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
   }, [desktop, intl]);
 
-  const enter = useCallback((operation: 'scan' | 'convert' | 'probe') => {
-    if (busyRef.current || !desktop) return false;
-    busyRef.current = true; setBusy(operation); setError(''); setCancelling(false);
-    return true;
-  }, [desktop]);
-  const leave = useCallback(() => { busyRef.current = false; if (alive.current) { setBusy(null); setPaused(false); setCancelling(false); } }, []);
+  const enter = useCallback(
+    (operation: 'scan' | 'convert' | 'probe') => {
+      if (busyRef.current || !desktop) return false;
+      busyRef.current = true;
+      setBusy(operation);
+      setError('');
+      setCancelling(false);
+      return true;
+    },
+    [desktop],
+  );
+  const leave = useCallback(() => {
+    busyRef.current = false;
+    if (alive.current) {
+      setBusy(null);
+      setPaused(false);
+      setCancelling(false);
+    }
+  }, []);
 
-  const probe = useCallback(async (directory: string | null = null) => {
-    if (!enter('probe')) return;
-    setTools(null);
-    try { const info = await invoke<ToolInfo>('probe_tools', { directory }); if (alive.current) setTools(info); }
-    catch (e) { if (alive.current) setError(errorText(e)); }
-    finally { leave(); }
-  }, [enter, leave]);
+  const probe = useCallback(
+    async (directory: string | null = null) => {
+      if (!enter('probe')) return;
+      setTools(null);
+      try {
+        const info = await invoke<ToolInfo>('probe_tools', { directory });
+        if (alive.current) setTools(info);
+      } catch (e) {
+        if (alive.current) setError(errorText(e));
+      } finally {
+        leave();
+      }
+    },
+    [enter, leave],
+  );
 
   // No automatic probe in a StrictMode effect: App performs it once through
   // a ref-guarded effect; the async operation can outlive the effect cleanup.
-  const scanPaths = useCallback(async (paths: string[], mode: ConversionMode) => {
-    if (!paths.length || !enter('scan')) return;
-    generation.current += 1;
-    setScan(null); setSummary(null); rows.current.clear(); liveMetrics.current = emptyMetrics(); flush();
-    try { const result = await invoke<ScanResult>('scan_sources', { paths, mode }); if (alive.current) setScan(result); }
-    catch (e) { if (alive.current) setError(errorText(e)); }
-    finally { leave(); }
-  }, [enter, leave, flush]);
-
-  const start = useCallback(async (options: Options) => {
-    if (!scan || !tools || !enter('convert')) return;
-    setSummary(null); setPaused(false); rows.current.clear(); liveMetrics.current = emptyMetrics(); flush();
-    const currentGeneration = ++generation.current;
-    let summaryReceived = false;
-    const channel = new Channel<Progress>();
-    channel.onmessage = event => {
-      if (currentGeneration !== generation.current || !alive.current) return;
-      if (event.type === 'stage') {
-        if (!rows.current.get(event.id)?.result) rows.current.set(event.id, { status: event.stage });
-      } else {
-        const result = event.result;
-        // Ignore a duplicate completion rather than double-counting metrics.
-        if (rows.current.get(result.id)?.result) return;
-        rows.current.set(result.id, { status: result.status, result });
-        // IPC completion can arrive before a queued event is delivered.
-        // Late rows still update, but the final summary owns the counters.
-        const m = liveMetrics.current;
-        if (!summaryReceived) {
-          m.processed += 1;
-          if (result.status === 'converted') {
-            m.converted += 1; m.inputBytes += result.inputBytes; m.outputBytes += result.outputBytes ?? 0;
-          } else if (result.status === 'failed') m.failed += 1;
-          else if (result.status === 'existing' || result.status === 'notSmaller') m.skipped += 1;
-        }
+  const scanPaths = useCallback(
+    async (paths: string[], mode: ConversionMode) => {
+      if (!paths.length || !enter('scan')) return;
+      generation.current += 1;
+      setScan(null);
+      setSummary(null);
+      rows.current.clear();
+      liveMetrics.current = emptyMetrics();
+      flush();
+      try {
+        const result = await invoke<ScanResult>('scan_sources', { paths, mode });
+        if (alive.current) setScan(result);
+      } catch (e) {
+        if (alive.current) setError(errorText(e));
+      } finally {
+        leave();
       }
-      scheduleFlush();
-    };
-    try {
-      const result = await invoke<Summary>('convert', { options, onEvent: channel });
-      summaryReceived = true;
-      liveMetrics.current = {
-        processed: result.total - result.notStarted,
-        converted: result.converted, failed: result.failed,
-        skipped: result.existing + result.notSmaller,
-        inputBytes: result.inputBytes, outputBytes: result.outputBytes,
+    },
+    [enter, leave, flush],
+  );
+
+  const start = useCallback(
+    async (options: Options) => {
+      if (!scan || !tools || !enter('convert')) return;
+      setSummary(null);
+      setPaused(false);
+      rows.current.clear();
+      liveMetrics.current = emptyMetrics();
+      flush();
+      const currentGeneration = ++generation.current;
+      let summaryReceived = false;
+      const channel = new Channel<Progress>();
+      channel.onmessage = (event) => {
+        if (currentGeneration !== generation.current || !alive.current) return;
+        if (event.type === 'stage') {
+          if (!rows.current.get(event.id)?.result)
+            rows.current.set(event.id, { status: event.stage });
+        } else {
+          const result = event.result;
+          // Ignore a duplicate completion rather than double-counting metrics.
+          if (rows.current.get(result.id)?.result) return;
+          rows.current.set(result.id, { status: result.status, result });
+          // IPC completion can arrive before a queued event is delivered.
+          // Late rows still update, but the final summary owns the counters.
+          const m = liveMetrics.current;
+          if (!summaryReceived) {
+            m.processed += 1;
+            if (result.status === 'converted') {
+              m.converted += 1;
+              m.inputBytes += result.inputBytes;
+              m.outputBytes += result.outputBytes ?? 0;
+            } else if (result.status === 'failed') m.failed += 1;
+            else if (result.status === 'existing' || result.status === 'notSmaller') m.skipped += 1;
+          }
+        }
+        scheduleFlush();
       };
-      if (alive.current) setSummary(result);
-    }
-    catch (e) { if (alive.current) setError(errorText(e)); }
-    finally { flush(); leave(); }
-  }, [scan, tools, enter, flush, scheduleFlush, leave]);
+      try {
+        const result = await invoke<Summary>('convert', { options, onEvent: channel });
+        summaryReceived = true;
+        liveMetrics.current = {
+          processed: result.total - result.notStarted,
+          converted: result.converted,
+          failed: result.failed,
+          skipped: result.existing + result.notSmaller,
+          inputBytes: result.inputBytes,
+          outputBytes: result.outputBytes,
+        };
+        if (alive.current) setSummary(result);
+      } catch (e) {
+        if (alive.current) setError(errorText(e));
+      } finally {
+        flush();
+        leave();
+      }
+    },
+    [scan, tools, enter, flush, scheduleFlush, leave],
+  );
 
   const cancel = useCallback(async () => {
     setCancelling(true);
-    try { await invoke('cancel'); }
-    catch (e) { setCancelling(false); setError(errorText(e)); }
+    try {
+      await invoke('cancel');
+    } catch (e) {
+      setCancelling(false);
+      setError(errorText(e));
+    }
   }, []);
   const togglePause = useCallback(async () => {
     if (pausePending.current || !busyRef.current) return;
@@ -133,19 +218,50 @@ function useTauriConverter() {
     try {
       await invoke('set_paused', { paused: value });
       if (alive.current && busyRef.current) setPaused(value);
+    } catch (e) {
+      if (alive.current) setError(errorText(e));
+    } finally {
+      pausePending.current = false;
     }
-    catch (e) { if (alive.current) setError(errorText(e)); }
-    finally { pausePending.current = false; }
   }, [paused]);
   const clear = useCallback(() => {
     if (busyRef.current) return;
     generation.current += 1;
-    setScan(null); setSummary(null); rows.current.clear(); liveMetrics.current = emptyMetrics(); setError(''); flush();
+    setScan(null);
+    setSummary(null);
+    rows.current.clear();
+    liveMetrics.current = emptyMetrics();
+    setError('');
+    flush();
   }, [flush]);
 
-  return { desktop, capabilities: desktopCapabilities, scan, tools, busy, paused, cancelling, error, setError, summary, metrics, rows: rows.current,
-    revision, scanPaths, probe, start, cancel, togglePause, clear, scanWebFiles: undefined, selectDirectory: undefined,
-    selectOutputDirectory: undefined, outputLabel: '', downloadReady: 0, downloadAll: undefined };
+  return {
+    desktop,
+    capabilities: desktopCapabilities,
+    scan,
+    tools,
+    busy,
+    paused,
+    cancelling,
+    error,
+    setError,
+    summary,
+    metrics,
+    rows: rows.current,
+    revision,
+    scanPaths,
+    probe,
+    start,
+    cancel,
+    togglePause,
+    clear,
+    scanWebFiles: undefined,
+    selectDirectory: undefined,
+    selectOutputDirectory: undefined,
+    outputLabel: '',
+    downloadReady: 0,
+    downloadAll: undefined,
+  };
 }
 
 export function useConverter() {

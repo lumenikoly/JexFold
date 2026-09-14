@@ -32,7 +32,11 @@ pub struct ScanResult {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum ConversionMode { #[default] JpegToJxl, JxlToJpeg }
+pub enum ConversionMode {
+    #[default]
+    JpegToJxl,
+    JxlToJpeg,
+}
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,11 +84,21 @@ pub struct Options {
 
 #[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum Stage { Encoding, Decoding, Verifying }
+pub enum Stage {
+    Encoding,
+    Decoding,
+    Verifying,
+}
 
 #[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum ItemStatus { Converted, Existing, NotSmaller, Failed, Cancelled }
+pub enum ItemStatus {
+    Converted,
+    Existing,
+    NotSmaller,
+    Failed,
+    Cancelled,
+}
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -101,7 +115,11 @@ pub struct ItemResult {
 }
 
 #[derive(Clone, Debug, Serialize)]
-#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum Progress {
     Stage { id: usize, stage: Stage },
     Item { result: ItemResult },
@@ -129,7 +147,12 @@ mod tests {
     #[test]
     fn budget_never_oversubscribes() {
         for cpus in 1..256 {
-            for mode in [Performance::Quiet, Performance::Balanced, Performance::Fast, Performance::Maximum] {
+            for mode in [
+                Performance::Quiet,
+                Performance::Balanced,
+                Performance::Fast,
+                Performance::Maximum,
+            ] {
                 let (workers, threads) = mode.budget(cpus);
                 assert!(workers >= 1 && threads >= 1);
                 assert!(workers * threads <= cpus);

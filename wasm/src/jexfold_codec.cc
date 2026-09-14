@@ -25,9 +25,13 @@ int jexfold_encode_jpeg(const uint8_t* input, size_t size, int effort) {
   JxlEncoder* encoder = JxlEncoderCreate(nullptr);
   if (!encoder) return Fail(101);
   JxlEncoderFrameSettings* settings = JxlEncoderFrameSettingsCreate(encoder, nullptr);
-  if (!settings) { JxlEncoderDestroy(encoder); return Fail(102); }
+  if (!settings) {
+    JxlEncoderDestroy(encoder);
+    return Fail(102);
+  }
   if (JxlEncoderUseContainer(encoder, JXL_TRUE) != JXL_ENC_SUCCESS ||
-      JxlEncoderFrameSettingsSetOption(settings, JXL_ENC_FRAME_SETTING_EFFORT, std::clamp(effort, 3, 9)) != JXL_ENC_SUCCESS ||
+      JxlEncoderFrameSettingsSetOption(settings, JXL_ENC_FRAME_SETTING_EFFORT,
+                                       std::clamp(effort, 3, 9)) != JXL_ENC_SUCCESS ||
       JxlEncoderStoreJPEGMetadata(encoder, JXL_TRUE) != JXL_ENC_SUCCESS ||
       JxlEncoderAddJPEGFrame(settings, input, size) != JXL_ENC_SUCCESS) {
     JxlEncoderDestroy(encoder);
@@ -40,7 +44,10 @@ int jexfold_encode_jpeg(const uint8_t* input, size_t size, int effort) {
   for (;;) {
     const JxlEncoderStatus status = JxlEncoderProcessOutput(encoder, &next, &available);
     if (status == JXL_ENC_SUCCESS) break;
-    if (status != JXL_ENC_NEED_MORE_OUTPUT) { JxlEncoderDestroy(encoder); return Fail(104); }
+    if (status != JXL_ENC_NEED_MORE_OUTPUT) {
+      JxlEncoderDestroy(encoder);
+      return Fail(104);
+    }
     const size_t written = static_cast<size_t>(next - result.data());
     result.resize(result.size() * 2);
     next = result.data() + written;
@@ -56,7 +63,8 @@ int jexfold_reconstruct_jpeg(const uint8_t* input, size_t size) {
   last_error = 0;
   JxlDecoder* decoder = JxlDecoderCreate(nullptr);
   if (!decoder) return Fail(201);
-  if (JxlDecoderSubscribeEvents(decoder, JXL_DEC_JPEG_RECONSTRUCTION | JXL_DEC_FULL_IMAGE) != JXL_DEC_SUCCESS) {
+  if (JxlDecoderSubscribeEvents(decoder, JXL_DEC_JPEG_RECONSTRUCTION | JXL_DEC_FULL_IMAGE) !=
+      JXL_DEC_SUCCESS) {
     JxlDecoderDestroy(decoder);
     return Fail(202);
   }
@@ -76,25 +84,36 @@ int jexfold_reconstruct_jpeg(const uint8_t* input, size_t size) {
       const size_t remaining = JxlDecoderReleaseJPEGBuffer(decoder);
       const size_t written = result.size() - remaining;
       result.resize(result.size() * 2);
-      if (JxlDecoderSetJPEGBuffer(decoder, result.data() + written, result.size() - written) != JXL_DEC_SUCCESS) {
+      if (JxlDecoderSetJPEGBuffer(decoder, result.data() + written, result.size() - written) !=
+          JXL_DEC_SUCCESS) {
         JxlDecoderDestroy(decoder);
         return Fail(204);
       }
     } else if (status == JXL_DEC_FULL_IMAGE) {
-      if (!buffer_set) { JxlDecoderDestroy(decoder); return Fail(205); }
+      if (!buffer_set) {
+        JxlDecoderDestroy(decoder);
+        return Fail(205);
+      }
       const size_t remaining = JxlDecoderReleaseJPEGBuffer(decoder);
       result.resize(result.size() - remaining);
       JxlDecoderDestroy(decoder);
       return 0;
-    } else if (status == JXL_DEC_SUCCESS || status == JXL_DEC_ERROR || status == JXL_DEC_NEED_MORE_INPUT) {
+    } else if (status == JXL_DEC_SUCCESS || status == JXL_DEC_ERROR ||
+               status == JXL_DEC_NEED_MORE_INPUT) {
       JxlDecoderDestroy(decoder);
       return Fail(206);
     }
   }
 }
 
-const uint8_t* jexfold_result_data() { return result.data(); }
-size_t jexfold_result_size() { return result.size(); }
-int jexfold_result_error() { return last_error; }
+const uint8_t* jexfold_result_data() {
+  return result.data();
+}
+size_t jexfold_result_size() {
+  return result.size();
+}
+int jexfold_result_error() {
+  return last_error;
+}
 
 }  // extern "C"

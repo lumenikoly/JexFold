@@ -19,5 +19,8 @@ export const webCapabilities: BackendCapabilities = {
   directDirectoryOutput: typeof window !== 'undefined' && 'showDirectoryPicker' in window,
   persistentFileHandles: false,
   backgroundProcessing: false,
-  maxRecommendedConcurrency: Math.max(1, Math.min(4, Math.floor((navigator.hardwareConcurrency || 4) / 2))),
+  maxRecommendedConcurrency: Math.max(
+    1,
+    Math.min(4, Math.floor((navigator.hardwareConcurrency || 4) / 2)),
+  ),
 };

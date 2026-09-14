@@ -98,6 +98,18 @@ Windows builds use MSVC, Visual Studio Build Tools, and the Windows SDK. macOS b
 
 ## Checks and builds
 
+The project keeps linting and formatting commands in the repository so local checks match CI:
+
+```bash
+pnpm run lint:web
+pnpm run typecheck
+pnpm run format:check
+pnpm run lint:rust
+pnpm run format:cpp:check
+```
+
+`pnpm run lint` additionally runs Clippy, clang-tidy, ShellCheck, and actionlint. The native commands need the corresponding tools installed; `lint:cpp` expects the pinned libjxl checkout from `pnpm run codecs:build`.
+
 ```bash
 pnpm run check
 pnpm run wasm:build

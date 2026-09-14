@@ -10,10 +10,13 @@ const precacheWorkerAssets = () => ({
     const outputDirectory = resolve(options.dir ?? 'dist');
     const serviceWorkerPath = resolve(outputDirectory, 'sw.js');
     const serviceWorker = await readFile(serviceWorkerPath, 'utf8');
-    const generatedAssets = Object.keys(bundle).filter(file => file !== 'index.html');
+    const generatedAssets = Object.keys(bundle).filter((file) => file !== 'index.html');
     await writeFile(
       serviceWorkerPath,
-      serviceWorker.replace('const PRECACHE_ASSETS = [];', `const PRECACHE_ASSETS = ${JSON.stringify(generatedAssets)};`),
+      serviceWorker.replace(
+        'const PRECACHE_ASSETS = [];',
+        `const PRECACHE_ASSETS = ${JSON.stringify(generatedAssets)};`,
+      ),
     );
   },
 });

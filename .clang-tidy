@@ -1,0 +1,11 @@
+Checks: >-
+  -*,
+  clang-analyzer-*,
+  bugprone-infinite-loop,
+  bugprone-use-after-move,
+  bugprone-suspicious-memset-usage,
+  performance-*,
+  readability-duplicate-include
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'wasm/src/.*'
+FormatStyle: file

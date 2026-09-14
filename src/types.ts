@@ -41,8 +41,8 @@ export interface ItemResult {
   elapsedMs: number;
   message: string | null;
 }
-export type Progress = { type: 'stage'; id: number; stage: Stage }
-  | { type: 'item'; result: ItemResult };
+export type Progress =
+  { type: 'stage'; id: number; stage: Stage } | { type: 'item'; result: ItemResult };
 export interface Summary {
   total: number;
   converted: number;
@@ -56,8 +56,15 @@ export interface Summary {
   elapsedMs: number;
   wasCancelled: boolean;
 }
-export interface RowState { status: Stage | ItemStatus; result?: ItemResult }
+export interface RowState {
+  status: Stage | ItemStatus;
+  result?: ItemResult;
+}
 export interface Metrics {
-  processed: number; converted: number; failed: number; skipped: number;
-  inputBytes: number; outputBytes: number;
+  processed: number;
+  converted: number;
+  failed: number;
+  skipped: number;
+  inputBytes: number;
+  outputBytes: number;
 }

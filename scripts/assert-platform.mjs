@@ -6,6 +6,8 @@ if (!expected) {
 }
 
 if (process.platform !== expected) {
-  console.error(`This release target requires ${expected}, but the current platform is ${process.platform}.`);
+  console.error(
+    `This release target requires ${expected}, but the current platform is ${process.platform}.`,
+  );
   process.exit(1);
 }

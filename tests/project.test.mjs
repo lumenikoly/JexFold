@@ -14,11 +14,12 @@ test('no generic shell or file-write permissions are exposed to the webview', ()
   const capability = JSON.parse(read('src-tauri/capabilities/main.json'));
   assert.deepEqual(capability.permissions, ['core:default', 'dialog:allow-open']);
 });
-test('codec invocation requires JPEG reconstruction and never adds a lossy quality flag', () => {
+test('JPEG compression is verified and JXL decoding uses the pixel path', () => {
   const source = read('crates/jxl-core/src/convert.rs');
   assert.match(source, /--lossless_jpeg=1/);
   assert.match(source, /--allow_jpeg_reconstruction=1/);
   assert.match(source, /--reconstruct_jpeg/);
+  assert.match(source, /--pixels_to_jpeg/);
   assert.doesNotMatch(source, /--quality|--distance|remove_file|remove_dir/);
 });
 test('publication has no rename-overwrite or copy fallback', () => {

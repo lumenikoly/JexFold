@@ -39,7 +39,7 @@ pub(crate) fn convert_one(
             notify(Progress::Stage { id: source.id, stage: Stage::Decoding });
             process::run(&tools.decoder, &[
                 snapshot.as_os_str().into(), stage.as_os_str().into(),
-                "--reconstruct_jpeg".into(), format!("--num_threads={threads}").into(),
+                "--pixels_to_jpeg".into(), format!("--num_threads={threads}").into(),
             ], control, CODEC_TIMEOUT)?;
             let size = fs::metadata(&stage)?.len();
             if size < 3 { return Err(Error::Invalid("Декодер создал пустой или повреждённый JPEG".into())); }

@@ -8,7 +8,7 @@ The application uses the official `cjxl` and `djxl` tools, processes everything 
 
 ## Features
 
-- JPEG → JXL compression and JXL → JPEG reconstruction;
+- JPEG → JXL compression and standard conversion of arbitrary JXL files to JPEG;
 - file and folder selection, drag-and-drop, and recursive `.jpg`/`.jpeg` discovery;
 - preservation of the source folder structure in a separate destination directory;
 - strict JPEG → JXL → JPEG verification and source SHA-256 calculation;
@@ -47,7 +47,7 @@ Version 0.0.2 is unsigned. Windows SmartScreen and macOS Gatekeeper may warn abo
 1. Select JPEG/JXL files or a source folder.
 2. Select a separate destination folder. It must not be nested inside the source folder, and the source must not be nested inside it.
 3. Choose the conversion mode and processing settings.
-4. Click **Start compression** or **Restore JPEG**.
+4. Click **Start compression** or **Convert to JPEG**.
 5. Review the result in the application.
 
 Example output layout:

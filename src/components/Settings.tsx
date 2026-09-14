@@ -40,6 +40,6 @@ export function Settings({ options, setOptions, disabled, chooseOutput, desktop,
         {options.mode === 'jpegToJxl' && <label className="checkbox-row"><input type="checkbox" checked={options.skipLarger} onChange={e => setOptions({ ...options, skipLarger: e.target.checked })} /><span>{t('settings.skipLarger')}</span></label>}
       </div>
     </fieldset>
-    <div className="verification-note"><Icon name="shield" size={20} /><div><strong>{t('settings.lossless')}</strong><p>{t(options.mode === 'jpegToJxl' ? 'settings.verifyAfterCompression' : 'settings.restoreOriginal')}</p></div></div>
+    <div className="verification-note"><Icon name="shield" size={20} /><div><strong>{t(options.mode === 'jpegToJxl' ? 'settings.lossless' : 'settings.decodeToJpeg')}</strong><p>{t(options.mode === 'jpegToJxl' ? 'settings.verifyAfterCompression' : 'settings.restoreOriginal')}</p></div></div>
   </aside>;
 }

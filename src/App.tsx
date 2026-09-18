@@ -325,62 +325,7 @@ export default function App() {
                 </div>
               </div>
               <section className="quick-settings" aria-label={t('settings.title')}>
-                <div className={`quick-grid ${options.mode === 'jxlToJpeg' ? 'jxl-to-jpeg' : ''}`}>
-                  {options.mode === 'jpegToJxl' && (
-                    <div className="quick-card compression-quick-card">
-                      <div className="quick-card-top">
-                        <span>{t('settings.compressionEffort')}</span>
-                        <output>
-                          {options.effort} <small>/ 9</small>
-                        </output>
-                      </div>
-                      <div className="range-row">
-                        <span className="range-icon" aria-hidden="true">
-                          ⚡
-                        </span>
-                        <input
-                          aria-label={t('settings.compressionEffort')}
-                          type="range"
-                          min="3"
-                          max="9"
-                          step="1"
-                          value={options.effort}
-                          disabled={busy}
-                          onChange={(e) =>
-                            setOptions({ ...options, effort: Number(e.target.value) })
-                          }
-                        />
-                        <span className="range-icon" aria-hidden="true">
-                          ▣
-                        </span>
-                      </div>
-                      <div className="preset-row">
-                        <button
-                          disabled={busy}
-                          className={options.effort <= 5 ? 'is-active' : ''}
-                          onClick={() => setOptions({ ...options, effort: 4 })}
-                        >
-                          {t('preset.fast')}
-                        </button>
-                        <button
-                          disabled={busy}
-                          className={
-                            options.effort === 6 || options.effort === 7 ? 'is-active' : ''
-                          }
-                          onClick={() => setOptions({ ...options, effort: 7 })}
-                        >
-                          {t('preset.balanced')}
-                        </button>
-                        <button
-                          disabled={busy}
-                          className={options.effort >= 8 ? 'is-active' : ''}
-                          onClick={() => setOptions({ ...options, effort: 9 })}
-                        >
-                          {t('preset.maximum')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div className="quick-grid">
                   <button
                     className="quick-card quick-action-card output-quick-card"
                     onClick={() => void pickOutput()}
@@ -415,7 +360,6 @@ export default function App() {
                           if (
                             performance === 'quiet' ||
                             performance === 'balanced' ||
-                            performance === 'fast' ||
                             performance === 'maximum'
                           ) {
                             setOptions((current) => ({ ...current, performance }));
@@ -424,7 +368,6 @@ export default function App() {
                       >
                         <option value="quiet">{t('performance.quiet')}</option>
                         <option value="balanced">{t('performance.balanced')}</option>
-                        <option value="fast">{t('performance.fast')}</option>
                         <option value="maximum">{t('performance.maximum')}</option>
                       </select>
                     </label>
@@ -635,6 +578,16 @@ export default function App() {
             Created by nkoksharov.dev
           </a>
           <span>version 0.0.3</span>
+          <a
+            className="footer-github"
+            href="https://github.com/lumenikoly/JexFold"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="JexFold on GitHub"
+          >
+            <Icon name="github" size={14} />
+            <span>GitHub</span>
+          </a>
         </div>
       </footer>
     </div>

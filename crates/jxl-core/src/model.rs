@@ -43,7 +43,6 @@ pub enum ConversionMode {
 pub enum Performance {
     Quiet,
     Balanced,
-    Fast,
     #[default]
     Maximum,
 }
@@ -57,10 +56,6 @@ impl Performance {
             Self::Balanced => {
                 let workers = (usable / 4).clamp(1, 2);
                 (workers, (usable / workers).clamp(1, 4))
-            }
-            Self::Fast => {
-                let workers = (usable / 2).clamp(1, 4);
-                (workers, (usable / workers).clamp(1, 8))
             }
             Self::Maximum => {
                 let workers = usable.clamp(1, 8);
@@ -150,7 +145,6 @@ mod tests {
             for mode in [
                 Performance::Quiet,
                 Performance::Balanced,
-                Performance::Fast,
                 Performance::Maximum,
             ] {
                 let (workers, threads) = mode.budget(cpus);

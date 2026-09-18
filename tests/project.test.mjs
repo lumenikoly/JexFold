@@ -32,16 +32,36 @@ test('English and Russian locale catalogs have identical message IDs', () => {
   const ru = JSON.parse(read('src/i18n/locales/ru.json'));
   assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort());
 });
+test('queue shows percentage and megabyte size differences', () => {
+  const queue = read('src/components/Queue.tsx');
+  assert.match(queue, /queue\.differencePercent/);
+  assert.match(queue, /queue\.differenceSize/);
+  assert.match(queue, /sizeDifference \/ 1_000_000/);
+  assert.match(queue, /unit: 'megabyte'/);
+});
 test('space-saving filter is disabled by default', () => {
   const preferences = read('src/lib/preferences.ts');
   assert.match(preferences, /skipLarger: false/);
 });
+test('compression effort is fixed at the maximum and has no UI control', () => {
+  const preferences = read('src/lib/preferences.ts');
+  const app = read('src/App.tsx');
+  const settings = read('src/components/Settings.tsx');
+  assert.match(preferences, /MAX_COMPRESSION_EFFORT = 9/);
+  assert.match(preferences, /effort: MAX_COMPRESSION_EFFORT/);
+  assert.doesNotMatch(app, /type="range"|compressionEffort|preset\.maximum/);
+  assert.doesNotMatch(settings, /type="range"|compressionEffort/);
+});
 test('maximum computer usage is the default performance mode', () => {
   const preferences = read('src/lib/preferences.ts');
+  const types = read('src/types.ts');
   const model = read('crates/jxl-core/src/model.rs');
   assert.match(preferences, /performance: 'maximum'/);
   assert.match(preferences, /: 'maximum',/);
+  assert.match(types, /'quiet' \| 'balanced' \| 'maximum'/);
+  assert.doesNotMatch(types, /'fast'/);
   assert.match(model, /\#\[default\]\s+Maximum,/);
+  assert.doesNotMatch(model, /\bFast\b/);
 });
 test('footer stays at the bottom and shows the app version', () => {
   const app = read('src/App.tsx');

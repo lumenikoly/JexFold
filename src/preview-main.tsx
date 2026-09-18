@@ -35,7 +35,7 @@ localStorage.setItem(
   JSON.stringify({
     mode: 'jpegToJxl',
     outputDir: '',
-    effort: 7,
+    effort: 9,
     performance: 'maximum',
     preserveMetadata: true,
     skipLarger: false,

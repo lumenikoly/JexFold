@@ -43,7 +43,8 @@ export function Queue({
               <th>{mode === 'jpegToJxl' ? 'JPEG' : 'JXL'}</th>
               <th>{mode === 'jpegToJxl' ? 'JXL' : 'JPEG'}</th>
               <th>{t('queue.result')}</th>
-              <th aria-label={t('progress.saved')}></th>
+              <th>{t('queue.differencePercent')}</th>
+              <th>{t('queue.differenceSize')}</th>
             </tr>
           </thead>
           <tbody>
@@ -53,6 +54,10 @@ export function Queue({
               const saving =
                 result?.outputBytes != null && mode === 'jpegToJxl'
                   ? savingPercent(file.size, result.outputBytes)
+                  : null;
+              const sizeDifference =
+                result?.outputBytes != null && mode === 'jpegToJxl'
+                  ? result.outputBytes - file.size
                   : null;
               return (
                 <tr key={file.id}>
@@ -87,6 +92,19 @@ export function Queue({
                       : intl.formatNumber(-saving / 100, {
                           style: 'percent',
                           maximumFractionDigits: 1,
+                        })}
+                  </td>
+                  <td
+                    className={`saving-number ${sizeDifference != null && sizeDifference < 0 ? 'positive' : ''}`}
+                  >
+                    {sizeDifference == null
+                      ? '—'
+                      : intl.formatNumber(sizeDifference / 1_000_000, {
+                          style: 'unit',
+                          unit: 'megabyte',
+                          unitDisplay: 'short',
+                          maximumFractionDigits: 2,
+                          signDisplay: 'exceptZero',
                         })}
                   </td>
                 </tr>

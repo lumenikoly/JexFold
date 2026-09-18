@@ -75,28 +75,6 @@ export function Settings({
           {(desktop || directOutput) && <span className="ellipsis">···</span>}
         </button>
         <p className="hint">{t('settings.originalsStay')}</p>
-        {options.mode === 'jpegToJxl' && (
-          <>
-            <div className="field-head">
-              <label htmlFor="effort">{t('settings.compressionEffort')}</label>
-              <output htmlFor="effort">{options.effort}</output>
-            </div>
-            <input
-              id="effort"
-              type="range"
-              min="3"
-              max="9"
-              step="1"
-              value={options.effort}
-              onChange={(e) => setOptions({ ...options, effort: Number(e.target.value) })}
-            />
-            <div className="range-labels">
-              <span>{t('settings.faster')}</span>
-              <span>{t('settings.smaller')}</span>
-            </div>
-            <p className="hint">{t('settings.effortHint')}</p>
-          </>
-        )}
         <label className="field-label" htmlFor="performance">
           {t('settings.performance')}
         </label>
@@ -107,7 +85,6 @@ export function Settings({
         >
           <option value="quiet">{t('performance.quiet')}</option>
           <option value="balanced">{t('performance.balanced')}</option>
-          <option value="fast">{t('performance.fast')}</option>
           <option value="maximum">{t('performance.maximum')}</option>
         </select>
         <div className="options-list">

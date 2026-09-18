@@ -182,7 +182,7 @@ export function useWebConverter() {
       const concurrency =
         options.performance === 'quiet'
           ? 1
-          : options.performance === 'fast' || options.performance === 'maximum'
+          : options.performance === 'maximum'
             ? webCapabilities.maxRecommendedConcurrency
             : Math.min(2, webCapabilities.maxRecommendedConcurrency);
       const activePool = new WorkerPool(

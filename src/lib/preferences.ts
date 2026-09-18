@@ -2,10 +2,11 @@ import type { Options } from '../types';
 
 const KEY = 'jexfold.preferences.v1';
 const LEGACY_KEY = 'jpeg-archiver.preferences.v1';
+export const MAX_COMPRESSION_EFFORT = 9;
 export const defaults: Options = {
   mode: 'jpegToJxl',
   outputDir: '',
-  effort: 7,
+  effort: MAX_COMPRESSION_EFFORT,
   performance: 'maximum',
   preserveMetadata: true,
   skipLarger: false,
@@ -21,17 +22,10 @@ export function loadPreferences(): Options {
     return {
       mode: raw.mode === 'jxlToJpeg' ? 'jxlToJpeg' : 'jpegToJxl',
       outputDir: typeof raw.outputDir === 'string' ? raw.outputDir : '',
-      effort:
-        typeof raw.effort === 'number' &&
-        Number.isInteger(raw.effort) &&
-        raw.effort >= 3 &&
-        raw.effort <= 9
-          ? raw.effort
-          : 7,
+      effort: MAX_COMPRESSION_EFFORT,
       performance:
         raw.performance === 'quiet' ||
         raw.performance === 'balanced' ||
-        raw.performance === 'fast' ||
         raw.performance === 'maximum'
           ? raw.performance
           : 'maximum',

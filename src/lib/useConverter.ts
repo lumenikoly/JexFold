@@ -14,6 +14,7 @@ import type {
 } from '../types';
 import { desktopCapabilities } from '../platform/backend';
 import { useWebConverter } from '../platform/web/useWebConverter';
+import { usePreviewConverter } from './usePreviewConverter';
 
 const emptyMetrics = (): Metrics => ({
   processed: 0,
@@ -247,6 +248,7 @@ function useTauriConverter() {
     setError,
     summary,
     metrics,
+    progressPercent: null,
     rows: rows.current,
     revision,
     scanPaths,
@@ -265,7 +267,9 @@ function useTauriConverter() {
 }
 
 export function useConverter() {
+  const preview = usePreviewConverter(Boolean(window.__JEXFOLD_README_PREVIEW__));
   const desktop = useTauriConverter();
   const web = useWebConverter();
+  if (window.__JEXFOLD_README_PREVIEW__) return preview;
   return desktop.desktop ? desktop : web;
 }

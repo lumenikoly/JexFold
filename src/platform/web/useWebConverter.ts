@@ -399,6 +399,7 @@ export function useWebConverter() {
     setError,
     summary,
     metrics,
+    progressPercent: null,
     rows: rows.current,
     revision,
     probe,

@@ -1,10 +1,21 @@
 # JexFold
 
+Reversible JPEG → JPEG XL recompression.<br>
+Smaller files. Exact JPEG recovery.
+
+[![CI](https://github.com/lumenikoly/JexFold/actions/workflows/check.yml/badge.svg)](https://github.com/lumenikoly/JexFold/actions/workflows/check.yml)
+[![Release](https://img.shields.io/github/v/release/lumenikoly/JexFold)](https://github.com/lumenikoly/JexFold/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/lumenikoly/JexFold/total)](https://github.com/lumenikoly/JexFold/releases)
+[![License](https://img.shields.io/github/license/lumenikoly/JexFold)](LICENSE)
+[![Web App](https://img.shields.io/badge/Web-local%20%26%20offline-171717)](https://lumenikoly.github.io/JexFold/)
+
 **English** · [Русский](README.ru.md)
 
 JexFold is a local application for reversible JPEG-to-JPEG XL recompression. It runs as a desktop app and as a static browser app; the current version is **0.0.3**.
 
 The application uses the official `cjxl` and `djxl` tools, processes everything locally, and verifies every compression by reconstructing the original JPEG and comparing it byte for byte. Originals are never deleted, and existing output files are never overwritten.
+
+[![JexFold README preview](renders/readme-preview.gif)](renders/readme-preview.mp4)
 
 ## Features
 

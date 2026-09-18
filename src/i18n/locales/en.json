@@ -83,6 +83,7 @@
   "preset.maximum": "Maximum",
   "settings.performance": "Computer usage",
   "settings.localOnly": "All photos are processed only on your device and are never sent anywhere. We do not collect any data.",
+  "settings.jxlBenefit": "JXL helps reduce photo sizes without losing quality. The image can be fully restored back to JPEG.",
   "performance.quiet": "Gentle",
   "performance.balanced": "Balanced",
   "performance.fast": "Faster",

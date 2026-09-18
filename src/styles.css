@@ -863,9 +863,10 @@ input[type='range'] {
   color: var(--muted);
   font-size: 11px;
 }
-.inline-privacy {
+.inline-info {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
   align-self: end;
   min-height: 38px;

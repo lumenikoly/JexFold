@@ -138,7 +138,8 @@ export default function App() {
   }
 
   const total = app.scan?.files.length ?? 0;
-  const progress = total === 0 ? 0 : Math.round((app.metrics.processed / total) * 100);
+  const progress =
+    app.progressPercent ?? (total === 0 ? 0 : Math.round((app.metrics.processed / total) * 100));
   const savings = app.metrics.inputBytes - app.metrics.outputBytes;
   const working = app.busy === 'convert';
   const outputName = app.desktop
@@ -427,8 +428,9 @@ export default function App() {
                         <option value="maximum">{t('performance.maximum')}</option>
                       </select>
                     </label>
-                    <div className="inline-privacy">
+                    <div className="inline-info">
                       <p>{t('settings.localOnly')}</p>
+                      <p>{t('settings.jxlBenefit')}</p>
                     </div>
                   </div>
                   <div className="inline-toggles">

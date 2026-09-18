@@ -1,0 +1,8 @@
+{
+  "duration": 7,
+  "assertions": [
+    { "kind": "appearsBy", "selector": ".app-shell", "bySec": 0.2 },
+    { "kind": "appearsBy", "selector": ".mode-bar", "bySec": 0.2 },
+    { "kind": "staysInFrame", "selector": ".app-shell" }
+  ]
+}

@@ -11,4 +11,10 @@ src-tauri/resources/codecs/*
 public/wasm/*
 !public/wasm/README.md
 readme-preview/bundle/
+readme-preview/.thumbnails/
+readme-preview/snapshots/
+readme-preview/render-frame-*.png
+readme-preview/AGENTS.md
+readme-preview/CLAUDE.md
+readme-preview/BRIEF.md
 # Keep Cargo.lock and pnpm-lock.yaml after the first dependency resolution.

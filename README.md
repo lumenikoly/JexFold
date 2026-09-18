@@ -15,7 +15,7 @@ JexFold is a local application for reversible JPEG-to-JPEG XL recompression. It 
 
 The application uses the official `cjxl` and `djxl` tools, processes everything locally, and verifies every compression by reconstructing the original JPEG and comparing it byte for byte. Originals are never deleted, and existing output files are never overwritten.
 
-[![JexFold README preview](renders/readme-preview.gif)](renders/readme-preview.mp4)
+[![JexFold README preview](renders/readme-preview-en.gif)](renders/readme-preview-en.mp4)
 
 ## Features
 

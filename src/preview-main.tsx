@@ -22,13 +22,14 @@ type PreviewTimeline = {
 declare global {
   interface Window {
     __timelines: Record<string, PreviewTimeline>;
+    __JEXFOLD_PREVIEW_LOCALE__?: 'en' | 'ru';
   }
 }
 
 const root = document.getElementById('app-root');
 if (!root) throw new Error('Missing preview application root');
 
-localStorage.setItem('jexfold.language.v1', 'ru');
+localStorage.setItem('jexfold.language.v1', window.__JEXFOLD_PREVIEW_LOCALE__ ?? 'ru');
 localStorage.setItem(
   'jexfold.preferences.v1',
   JSON.stringify({

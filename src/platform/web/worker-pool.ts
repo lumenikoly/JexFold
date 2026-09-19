@@ -51,7 +51,19 @@ export class WorkerPool {
       this.release(slot);
       throw new DOMException('Cancelled', 'AbortError');
     }
-    const bytes = await file.arrayBuffer();
+    let bytes: ArrayBuffer;
+    try {
+      bytes = await file.arrayBuffer();
+    } catch (error) {
+      this.release(slot);
+      throw error;
+    }
+    // Reading a large File cannot be aborted. Re-check before posting to the
+    // worker so cancellation during arrayBuffer() still settles this task.
+    if (this.cancelled) {
+      this.release(slot);
+      throw new DOMException('Cancelled', 'AbortError');
+    }
     return new Promise<ArrayBuffer>((resolve, reject) => {
       const finish = () => {
         slot.worker.onmessage = null;
@@ -59,10 +71,13 @@ export class WorkerPool {
         slot.reject = undefined;
         this.release(slot);
       };
-      slot.reject = reject;
-      slot.worker.onerror = (event) => {
+      const rejectAndFinish = (error: Error) => {
         finish();
-        reject(new Error(event.message || 'The worker stopped unexpectedly.'));
+        reject(error);
+      };
+      slot.reject = rejectAndFinish;
+      slot.worker.onerror = (event) => {
+        rejectAndFinish(new Error(event.message || 'The worker stopped unexpectedly.'));
       };
       slot.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
         const response = event.data;
@@ -72,8 +87,7 @@ export class WorkerPool {
           finish();
           resolve(response.bytes);
         } else {
-          finish();
-          reject(new Error(response.error));
+          rejectAndFinish(new Error(response.error));
         }
       };
       const request: WorkerRequest = {
@@ -84,7 +98,11 @@ export class WorkerPool {
         effort,
         codecUrl: this.codecUrl,
       };
-      slot.worker.postMessage(request, [bytes]);
+      try {
+        slot.worker.postMessage(request, [bytes]);
+      } catch (error) {
+        rejectAndFinish(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 

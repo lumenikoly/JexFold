@@ -23,6 +23,10 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const busy = app.busy !== null;
+  const probe = app.probe;
+  const desktop = app.desktop;
+  const scanPaths = app.scanPaths;
+  const setAppError = app.setError;
   const busyRef = useRef(busy);
   busyRef.current = busy;
 
@@ -32,9 +36,9 @@ export default function App() {
   useEffect(() => {
     if (!init.current) {
       init.current = true;
-      void app.probe();
+      void probe();
     }
-  }, [app.probe]);
+  }, [probe]);
   useEffect(() => {
     if (!app.desktop || options.mode !== 'jpegToJxl' || !app.scan?.roots.length) return;
     const parent = (path: string) =>
@@ -54,7 +58,7 @@ export default function App() {
       }));
   }, [app.desktop, app.scan, options.mode]);
   useEffect(() => {
-    if (!app.desktop) return;
+    if (!desktop) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
     void getCurrentWebview()
@@ -66,20 +70,19 @@ export default function App() {
         if (event.payload.type === 'enter' || event.payload.type === 'over') setDragging(true);
         else {
           setDragging(false);
-          if (event.payload.type === 'drop')
-            void app.scanPaths?.(event.payload.paths, options.mode);
+          if (event.payload.type === 'drop') void scanPaths?.(event.payload.paths, options.mode);
         }
       })
       .then((fn) => {
         if (disposed) fn();
         else unlisten = fn;
       })
-      .catch((e) => app.setError(String(e)));
+      .catch((e) => setAppError(String(e)));
     return () => {
       disposed = true;
       unlisten?.();
     };
-  }, [app.desktop, app.scanPaths, app.setError, options.mode]);
+  }, [desktop, scanPaths, setAppError, options.mode]);
 
   async function pickSources(directory: boolean) {
     try {
@@ -260,7 +263,7 @@ export default function App() {
                 onDragEnter={(event) => {
                   if (!app.desktop) {
                     event.preventDefault();
-                    setDragging(true);
+                    if (!busy) setDragging(true);
                   }
                 }}
                 onDragOver={(event) => {
@@ -273,7 +276,7 @@ export default function App() {
                   if (!app.desktop) {
                     event.preventDefault();
                     setDragging(false);
-                    void app.scanWebFiles?.([...event.dataTransfer.files], options.mode);
+                    if (!busy) void app.scanWebFiles?.([...event.dataTransfer.files], options.mode);
                   }
                 }}
               >

@@ -57,12 +57,25 @@ async function writeOutput(root: FileSystemDirectoryHandle, relative: string, by
     if (!(error instanceof DOMException) || error.name !== 'NotFoundError') throw error;
   }
   const handle = await directory.getFileHandle(name, { create: true });
-  const writable = await handle.createWritable();
+  let writable: Awaited<ReturnType<FileSystemFileHandle['createWritable']>> | undefined;
   try {
-    await writable.write(bytes);
-    await writable.close();
+    const stream = await handle.createWritable();
+    writable = stream;
+    await stream.write(bytes);
+    await stream.close();
   } catch (error) {
-    await writable.abort();
+    try {
+      await writable?.abort();
+    } catch {
+      // The stream may already be closed after a failed commit.
+    }
+    // getFileHandle({ create: true }) makes the directory entry visible before
+    // the writable stream commits. Do not leave that incomplete result behind.
+    try {
+      await directory.removeEntry(name);
+    } catch {
+      // Preserve the original write error; cleanup is best-effort.
+    }
     throw error;
   }
   return true;
@@ -91,40 +104,73 @@ export function useWebConverter() {
   const pool = useRef<WorkerPool | null>(null);
   const pausedRef = useRef(false);
   const cancelled = useRef(false);
+  const busyRef = useRef(false);
 
   const flush = useCallback(() => setRevision((value) => value + 1), []);
-  const scanFiles = useCallback(async (entries: SelectedFile[], mode: ConversionMode) => {
-    setBusy('scan');
-    setError('');
-    setSummary(null);
-    downloads.current.clear();
-    setDownloadReady(0);
-    try {
-      const usable = entries.filter((entry) => accepted(entry.file, mode));
-      const incompatibleCount = entries.length - usable.length;
-      const files: SourceFile[] = usable.map((entry, id) => ({
-        id,
-        source: entry.file.name,
-        relative: entry.relative,
-        size: entry.file.size,
-      }));
-      selected.current = new Map(usable.map((entry, id) => [id, entry.file]));
-      rows.current.clear();
-      setMetrics(emptyMetrics());
-      setScan({
-        files,
-        roots: [],
-        directoryRoots: [],
-        warnings: [],
-        warningCount: 0,
-        totalBytes: files.reduce((sum, file) => sum + file.size, 0),
-        mode,
-        incompatibleCount,
-      });
-    } finally {
-      setBusy(null);
-    }
+  const enter = useCallback((operation: 'scan' | 'convert') => {
+    if (busyRef.current) return false;
+    busyRef.current = true;
+    setBusy(operation);
+    return true;
   }, []);
+  const leave = useCallback(() => {
+    busyRef.current = false;
+    setBusy(null);
+    setPaused(false);
+    setCancelling(false);
+  }, []);
+  const scanFiles = useCallback(
+    async (entries: SelectedFile[], mode: ConversionMode) => {
+      if (!enter('scan')) return;
+      setError('');
+      setSummary(null);
+      downloads.current.clear();
+      setDownloadReady(0);
+      try {
+        const usable = entries.filter((entry) => accepted(entry.file, mode));
+        const incompatibleCount = entries.length - usable.length;
+        const destinations = new Map<string, string>();
+        for (const entry of usable) {
+          const destination = outputName(entry.relative, mode);
+          const key = destination.toLowerCase();
+          const previous = destinations.get(key);
+          if (previous) {
+            selected.current.clear();
+            rows.current.clear();
+            setMetrics(emptyMetrics());
+            setScan(null);
+            setError(
+              `Output name conflict: ${previous} and ${entry.relative} both map to ${destination}.`,
+            );
+            return;
+          }
+          destinations.set(key, entry.relative);
+        }
+        const files: SourceFile[] = usable.map((entry, id) => ({
+          id,
+          source: entry.file.name,
+          relative: entry.relative,
+          size: entry.file.size,
+        }));
+        selected.current = new Map(usable.map((entry, id) => [id, entry.file]));
+        rows.current.clear();
+        setMetrics(emptyMetrics());
+        setScan({
+          files,
+          roots: [],
+          directoryRoots: [],
+          warnings: [],
+          warningCount: 0,
+          totalBytes: files.reduce((sum, file) => sum + file.size, 0),
+          mode,
+          incompatibleCount,
+        });
+      } finally {
+        leave();
+      }
+    },
+    [enter, leave],
+  );
   const scanWebFiles = useCallback(
     (files: File[], mode: ConversionMode) =>
       scanFiles(
@@ -158,12 +204,12 @@ export function useWebConverter() {
 
   const start = useCallback(
     async (options: Options) => {
-      if (!scan || busy) return;
+      if (!scan) return;
       if (scan.files.length === 0) {
         setError('No supported files were selected.');
         return;
       }
-      setBusy('convert');
+      if (!enter('convert')) return;
       setSummary(null);
       setError('');
       setPaused(false);
@@ -193,14 +239,6 @@ export function useWebConverter() {
       const totals = emptyMetrics();
       const results = { converted: 0, existing: 0, notSmaller: 0, failed: 0, cancelled: 0 };
       const processFile = async (source: SourceFile) => {
-        while (pausedRef.current && !cancelled.current)
-          await new Promise((resolve) => setTimeout(resolve, 80));
-        if (cancelled.current) {
-          results.cancelled += 1;
-          rows.current.set(source.id, { status: 'cancelled' });
-          flush();
-          return;
-        }
         const file = inputFiles.get(source.id);
         if (!file) {
           results.failed += 1;
@@ -333,26 +371,48 @@ export function useWebConverter() {
           flush();
         }
       };
-      await Promise.all(scan.files.map(processFile));
-      activePool.close();
-      if (pool.current === activePool) pool.current = null;
-      const notStarted = Math.max(0, scan.files.length - totals.processed);
-      const value: Summary = {
-        total: scan.files.length,
-        ...results,
-        notStarted,
-        inputBytes: totals.inputBytes,
-        outputBytes: totals.outputBytes,
-        elapsedMs: Math.round(performance.now() - started),
-        wasCancelled: cancelled.current,
-      };
-      setDownloadReady(downloads.current.size);
-      setSummary(value);
-      setBusy(null);
-      setPaused(false);
-      setCancelling(false);
+      try {
+        let nextIndex = 0;
+        const runWorker = async () => {
+          for (;;) {
+            while (pausedRef.current && !cancelled.current)
+              await new Promise((resolve) => setTimeout(resolve, 80));
+            if (cancelled.current) return;
+            const source = scan.files[nextIndex];
+            if (!source) return;
+            nextIndex += 1;
+            await processFile(source);
+          }
+        };
+        await Promise.all(
+          Array.from({ length: Math.min(concurrency, scan.files.length) }, runWorker),
+        );
+        const completed =
+          results.converted +
+          results.existing +
+          results.notSmaller +
+          results.failed +
+          results.cancelled;
+        const value: Summary = {
+          total: scan.files.length,
+          ...results,
+          notStarted: Math.max(0, scan.files.length - completed),
+          inputBytes: totals.inputBytes,
+          outputBytes: totals.outputBytes,
+          elapsedMs: Math.round(performance.now() - started),
+          wasCancelled: cancelled.current,
+        };
+        setDownloadReady(downloads.current.size);
+        setSummary(value);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : String(caught));
+      } finally {
+        activePool.close();
+        if (pool.current === activePool) pool.current = null;
+        leave();
+      }
     },
-    [busy, flush, scan],
+    [enter, flush, leave, scan],
   );
 
   const cancel = useCallback(async () => {
@@ -365,7 +425,7 @@ export function useWebConverter() {
     setPaused(pausedRef.current);
   }, []);
   const clear = useCallback(() => {
-    if (busy) return;
+    if (busyRef.current) return;
     setScan(null);
     setSummary(null);
     rows.current.clear();
@@ -375,7 +435,7 @@ export function useWebConverter() {
     setError('');
     setMetrics(emptyMetrics());
     flush();
-  }, [busy, flush]);
+  }, [flush]);
   const downloadAll = useCallback(() => {
     for (const { name, blob } of downloads.current.values()) {
       const anchor = document.createElement('a');

@@ -91,3 +91,23 @@ test('web build is static, scoped for Pages, and uses a verified worker pipeline
   assert.match(workflow, /actions\/deploy-pages@v5/);
   assert.match(workflow, /pnpm run wasm:build/);
 });
+test('web queue preserves pause, cancellation, and safe publication invariants', () => {
+  const app = read('src/App.tsx');
+  const converter = read('src/platform/web/useWebConverter.ts');
+  const pool = read('src/platform/web/worker-pool.ts');
+  assert.match(app, /if \(!busy\)\s+void app\.scanWebFiles/);
+  assert.match(converter, /const destinations = new Map<string, string>\(\)/);
+  assert.match(converter, /await directory\.removeEntry\(name\)/);
+  assert.match(converter, /while \(pausedRef\.current && !cancelled\.current\)/);
+  assert.match(
+    converter,
+    /Array\.from\(\{ length: Math\.min\(concurrency, scan\.files\.length\) \}/,
+  );
+  assert.match(converter, /notStarted: Math\.max\(0, scan\.files\.length - completed\)/);
+  const readFinished = pool.indexOf('bytes = await file.arrayBuffer()');
+  const cancellationRecheck = pool.indexOf('if (this.cancelled)', readFinished);
+  const postMessage = pool.indexOf('slot.worker.postMessage', readFinished);
+  assert.ok(
+    readFinished >= 0 && cancellationRecheck > readFinished && postMessage > cancellationRecheck,
+  );
+});
